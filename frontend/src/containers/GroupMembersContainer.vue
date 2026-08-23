@@ -24,7 +24,7 @@ const { initials, utcDate } = useFormat()
 <template>
   <div class="mx-auto max-w-2xl space-y-4">
     <AppAlert v-if="error" tone="error">{{ error }}</AppAlert>
-    <SportLoader v-else-if="isLoading" label="Loading members…" />
+    <SportLoader v-else-if="isLoading" label="Loading members…" class="py-12" />
 
     <template v-else>
       <AppCard :title="`${rows.length} member${rows.length === 1 ? '' : 's'}`">

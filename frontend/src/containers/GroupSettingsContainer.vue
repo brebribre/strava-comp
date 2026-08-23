@@ -30,7 +30,7 @@ async function handleSave() {
   <div class="max-w-2xl space-y-6">
     <AppAlert v-if="error" tone="error">{{ error }}</AppAlert>
     <AppAlert v-else-if="saved" tone="success">Target saved.</AppAlert>
-    <SportLoader v-if="isLoading" :size="36" />
+    <SportLoader v-if="isLoading" :size="36" class="py-6" />
 
     <template v-else>
       <AppCard title="Target">

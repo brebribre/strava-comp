@@ -313,11 +313,21 @@ block to `:root` regardless of any media query around it, so a `@theme` inside
 `prefers-color-scheme: dark` applies unconditionally. Dark values are plain custom property
 declarations on `:root` inside the media query.
 
-**Loading states** use `SportLoader` — running → cycling → swimming → tennis → weights,
-cross-fading on a 5.5s loop. The cycle is **pure CSS** (one keyframe set, staggered
-`animation-delay` per icon), so the component owns no timer and stays presentational. Full-page
-loads get it at 44px with a label; small inline spots (sidebar list, chart card) get 36px
-without one, or keep a plain line where an animation would be noise.
+**Every loading state in the app uses `SportLoader`** — running → cycling → swimming →
+tennis → weights. Two layers of motion, both pure CSS, so the component owns no timer and
+stays presentational:
+
+1. **Which sport shows** — a hard cut every 1.1s via `steps(1, end)`, never a fade, so there
+   is no half-transparent frame.
+2. **The sport itself moving** — legs and arms swinging in opposition, wheels and crank
+   spinning, the swimmer's arm stroking through drifting water, a racket swing, a barbell press.
+   Limbs are separate SVG elements rotated about anatomical origins (`transform-box: view-box`
+   lets the origin be written in viewBox coordinates).
+
+Drawn in **`--color-ink`** at full opacity — white in dark mode, near-black in light.
+
+Sizing and spacing are the caller's: 48px + label + `py-12` for full-page loads, 36px + `py-6`
+inline, 26px + `py-4` in the sidebar.
 
 **Motion is small and purposeful:**
 - buttons and chips scale to `0.97` on press — the click should feel physical

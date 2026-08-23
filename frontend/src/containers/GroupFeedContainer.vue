@@ -54,7 +54,7 @@ function statsFor(item: {
 
     <AppAlert v-if="error" tone="error">{{ error }}</AppAlert>
 
-    <SportLoader v-if="isLoading" label="Loading feed…" />
+    <SportLoader v-if="isLoading" label="Loading feed…" class="py-12" />
 
     <EmptyState
       v-else-if="!days.length"

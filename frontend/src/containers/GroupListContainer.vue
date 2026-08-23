@@ -79,7 +79,7 @@ async function handleJoin() {
     </div>
 
     <AppCard title="Your groups">
-      <SportLoader v-if="isLoading" :size="36" />
+      <SportLoader v-if="isLoading" :size="36" class="py-6" />
       <EmptyState
         v-else-if="!groups.length"
         title="You're not in any groups yet"

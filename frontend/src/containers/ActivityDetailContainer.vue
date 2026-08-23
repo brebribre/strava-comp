@@ -62,7 +62,7 @@ function goBack() {
     <AppButton variant="ghost" @click="goBack">← Back to feed</AppButton>
 
     <AppAlert v-if="error" tone="error">{{ error }}</AppAlert>
-    <SportLoader v-else-if="isLoading" label="Loading activity…" />
+    <SportLoader v-else-if="isLoading" label="Loading activity…" class="py-12" />
 
     <template v-else-if="activity">
       <AppCard>

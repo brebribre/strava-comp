@@ -38,7 +38,7 @@ function openSettings() {
 <template>
   <div class="space-y-6">
     <AppAlert v-if="error" tone="error">{{ error }}</AppAlert>
-    <SportLoader v-else-if="isLoading" label="Loading target…" />
+    <SportLoader v-else-if="isLoading" label="Loading target…" class="py-12" />
 
     <EmptyState
       v-else-if="!hasTarget"

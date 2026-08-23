@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useGroups } from '@/hooks/useGroups'
 import { useSidebar } from '@/hooks/useSidebar'
 import AppButton from '@/reusables/AppButton.vue'
+import SportLoader from '@/reusables/SportLoader.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -64,7 +65,7 @@ async function handleLogout() {
 
     <nav class="flex-1 overflow-y-auto p-2">
       <p class="px-2 py-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">Groups</p>
-      <p v-if="isLoading" class="px-2 py-2 text-sm text-ink-subtle">Loading…</p>
+      <SportLoader v-if="isLoading" :size="26" class="py-4" />
       <p v-else-if="!groups.length" class="px-2 py-2 text-sm text-ink-subtle">No groups yet</p>
       <button
         v-for="group in groups"

@@ -62,7 +62,7 @@ async function handleSync() {
     <AppAlert v-else-if="lastResult" tone="success">{{ lastResult }}</AppAlert>
 
     <AppCard title="Totals">
-      <SportLoader v-if="isLoading" :size="36" />
+      <SportLoader v-if="isLoading" :size="36" class="py-6" />
       <EmptyState
         v-else-if="!members.length"
         title="No members yet"
@@ -130,7 +130,7 @@ async function handleSync() {
         </div>
       </div>
 
-      <SportLoader v-if="trend.isLoading.value" :size="36" />
+      <SportLoader v-if="trend.isLoading.value" :size="36" class="py-6" />
       <EmptyState
         v-else-if="!trend.hasData.value"
         :title="trend.hasFilters.value ? 'Nothing matches these filters' : 'Nothing logged in this window'"

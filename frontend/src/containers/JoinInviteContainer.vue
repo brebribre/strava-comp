@@ -6,6 +6,7 @@ import { useJoinInvite } from '@/hooks/useJoinInvite'
 import AppAlert from '@/reusables/AppAlert.vue'
 import AppButton from '@/reusables/AppButton.vue'
 import AppCard from '@/reusables/AppCard.vue'
+import SportLoader from '@/reusables/SportLoader.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -27,8 +28,8 @@ onMounted(async () => {
       </AppButton>
     </template>
     <template v-else-if="isWorking">
-      <h1 class="text-lg font-semibold text-ink">Joining the group…</h1>
-      <p class="mt-2 text-sm text-ink-muted">
+      <SportLoader label="Joining the group…" class="py-8" />
+      <p class="-mt-4 text-sm text-ink-muted">
         You'll be asked to connect with Strava if you haven't already.
       </p>
     </template>
