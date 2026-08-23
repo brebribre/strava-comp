@@ -29,8 +29,8 @@ export function useGroupApi() {
     targetProgress: (groupId: number) =>
       request<TargetProgress>('GET', `/groups/${groupId}/target/progress`),
     telegram: (groupId: number) => request<TelegramSettings>('GET', `/groups/${groupId}/telegram`),
-    saveTelegram: (groupId: number, chatId: number | null) =>
-      request<TelegramSettings>('PUT', `/groups/${groupId}/telegram`, { telegram_chat_id: chatId }),
+    disconnectTelegram: (groupId: number) =>
+      request<TelegramSettings>('DELETE', `/groups/${groupId}/telegram`),
     testTelegram: (groupId: number) =>
       request<TelegramTestResult>('POST', `/groups/${groupId}/telegram/test`),
     feed: (groupId: number, limit: number, before?: string | null) =>

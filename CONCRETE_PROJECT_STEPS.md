@@ -499,8 +499,22 @@ WhatsApp was ruled out: Meta's Groups API only works with groups **the business 
 the API** (invite-only, max 8 participants, Official Business Account required) — there is no
 way to post into an existing personal group. Telegram has none of those limits.
 
-Setup: bot `@BruderBandeBot` via @BotFather; `TELEGRAM_BOT_TOKEN` on the backend; each
-Bruderbande group stores one `telegram_chat_id`.
+**Connecting a chat requires no chat id.** The group's Settings page shows a pairing code; the
+user adds `@BruderBandeBot` to their Telegram chat and sends `/connect <CODE>`. The bot reports
+the chat back through a Telegram webhook (`POST /telegram/webhook`, verified with
+`TELEGRAM_WEBHOOK_SECRET`), the app stores the chat id and title, and the settings page updates
+itself while the user watches. The code rotates on use, so a forwarded message can't be replayed.
+`/disconnect` in the chat unlinks it, as does Disconnect in the app.
+
+One-time per environment:
+```bash
+cd backend && .venv/bin/python -m scripts.setup_telegram_webhook https://api.bruderbande.com
+```
+Telegram allows one webhook URL per bot, so pointing it at production means local `/connect`
+stops working (use `--delete` while developing).
+
+Setup: bot `@BruderBandeBot` via @BotFather; `TELEGRAM_BOT_TOKEN` and `TELEGRAM_WEBHOOK_SECRET`
+on the backend.
 
 How it works: the webhook stores the activity, then announces it to every group the athlete
 belongs to that has a chat connected **and** whose target rules the activity satisfies (no

@@ -1,60 +1,88 @@
-import { ref, watch } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 
 import { useGroupApi } from '@/api/useGroupApi'
 import { ApiError } from '@/api/request'
 
-/** Connecting a group to a Telegram chat, and proving the connection works. */
+// While the setup card is open we re-check, so the screen flips to "connected" on its own
+// the moment the user sends the command in Telegram.
+const POLL_MS = 4000
+
+/**
+ * Connecting a group to a Telegram chat.
+ *
+ * Nobody has to find a chat id: the app shows a pairing code, the user sends
+ * "/connect CODE" in their chat, and the bot reports the chat back to us.
+ */
 export function useTelegramSettings(groupId: () => number) {
   const api = useGroupApi()
 
-  const chatId = ref('')
   const isConfigured = ref(false)
+  const chatTitle = ref<string | null>(null)
+  const pairingCode = ref<string | null>(null)
   const botUsername = ref<string | null>(null)
+
   const isLoading = ref(false)
-  const isSaving = ref(false)
   const isTesting = ref(false)
+  const isDisconnecting = ref(false)
   const error = ref<string | null>(null)
   const notice = ref<string | null>(null)
+  const copied = ref(false)
 
-  async function load() {
+  let timer: ReturnType<typeof setInterval> | null = null
+
+  const connectCommand = computed(() =>
+    pairingCode.value ? `/connect ${pairingCode.value}` : '',
+  )
+
+  async function load(quiet = false) {
     const id = groupId()
     if (!Number.isFinite(id)) return
-    isLoading.value = true
-    error.value = null
+    if (!quiet) isLoading.value = true
     try {
       const settings = await api.telegram(id)
-      chatId.value = settings.telegram_chat_id?.toString() ?? ''
+      const justConnected = settings.is_configured && !isConfigured.value
       isConfigured.value = settings.is_configured
+      chatTitle.value = settings.chat_title
+      pairingCode.value = settings.pairing_code
       botUsername.value = settings.bot_username
+      if (justConnected) {
+        notice.value = `Connected to ${settings.chat_title ?? 'your Telegram chat'}`
+        stopPolling()
+      }
     } catch (err) {
-      error.value = err instanceof ApiError ? err.message : 'Could not load Telegram settings'
+      if (!quiet) error.value = err instanceof ApiError ? err.message : 'Could not load settings'
     } finally {
-      isLoading.value = false
+      if (!quiet) isLoading.value = false
     }
   }
 
-  async function save() {
-    isSaving.value = true
-    error.value = null
-    notice.value = null
+  function startPolling() {
+    if (timer || isConfigured.value) return
+    timer = setInterval(() => load(true), POLL_MS)
+  }
+
+  function stopPolling() {
+    if (timer) clearInterval(timer)
+    timer = null
+  }
+
+  async function copyCommand() {
+    if (!connectCommand.value) return
     try {
-      // An empty field means "disconnect", which the API expresses as null.
-      const trimmed = chatId.value.trim()
-      const parsed = trimmed === '' ? null : Number(trimmed)
-      if (parsed !== null && !Number.isInteger(parsed)) {
-        error.value = 'Chat id must be a whole number, e.g. -1001234567890'
-        return false
-      }
-      const settings = await api.saveTelegram(groupId(), parsed)
-      isConfigured.value = settings.is_configured
-      notice.value = settings.is_configured ? 'Telegram connected' : 'Telegram disconnected'
-      return true
-    } catch (err) {
-      error.value = err instanceof ApiError ? err.message : 'Could not save'
-      return false
-    } finally {
-      isSaving.value = false
+      await navigator.clipboard.writeText(connectCommand.value)
+    } catch {
+      // Clipboard access can be denied; fall back to a selection-based copy.
+      const field = document.createElement('textarea')
+      field.value = connectCommand.value
+      field.style.position = 'fixed'
+      field.style.opacity = '0'
+      document.body.appendChild(field)
+      field.select()
+      document.execCommand('copy')
+      document.body.removeChild(field)
     }
+    copied.value = true
+    setTimeout(() => (copied.value = false), 2000)
   }
 
   async function sendTest() {
@@ -64,22 +92,37 @@ export function useTelegramSettings(groupId: () => number) {
     try {
       const result = await api.testTelegram(groupId())
       notice.value = result.detail
-      return true
     } catch (err) {
-      // Telegram's own wording ("chat not found", "bot was kicked") is the useful part.
+      // Telegram's own wording ("bot was kicked", "chat not found") is the useful part.
       error.value = err instanceof ApiError ? err.message : 'Test failed'
-      return false
     } finally {
       isTesting.value = false
     }
   }
 
-  watch(groupId, load, { immediate: true })
+  async function disconnect() {
+    isDisconnecting.value = true
+    error.value = null
+    notice.value = null
+    try {
+      const settings = await api.disconnectTelegram(groupId())
+      isConfigured.value = settings.is_configured
+      chatTitle.value = settings.chat_title
+      pairingCode.value = settings.pairing_code
+      notice.value = 'Disconnected'
+    } catch (err) {
+      error.value = err instanceof ApiError ? err.message : 'Could not disconnect'
+    } finally {
+      isDisconnecting.value = false
+    }
+  }
+
+  watch(groupId, () => load(), { immediate: true })
+  onUnmounted(stopPolling)
 
   return {
-    chatId, isConfigured, botUsername,
-    isLoading, isSaving, isTesting,
-    error, notice,
-    load, save, sendTest,
+    isConfigured, chatTitle, pairingCode, botUsername, connectCommand,
+    isLoading, isTesting, isDisconnecting, error, notice, copied,
+    load, startPolling, stopPolling, copyCommand, sendTest, disconnect,
   }
 }

@@ -18,6 +18,7 @@ TAGS_METADATA = [
     {"name": "groups", "description": "Create, join and inspect athlete groups."},
     {"name": "activities", "description": "Syncing activities from Strava."},
     {"name": "strava", "description": "Strava webhook subscription endpoints."},
+    {"name": "telegram", "description": "Telegram bot updates."},
 ]
 
 

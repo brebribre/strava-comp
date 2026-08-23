@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, Query, status
 from app.api.deps import CurrentAthlete, DbSession, MemberGroup
 from app.schemas.groups import GroupCreate, GroupJoin, GroupMember, GroupRead
 from app.schemas.feed import GroupFeed
-from app.schemas.integrations import TelegramSettings, TelegramTestResult, TelegramWrite
+from app.schemas.integrations import TelegramSettings, TelegramTestResult
 from app.schemas.summary import GroupSummary, GroupTrend
 from app.schemas.target import TargetProgress, TargetRead, TargetWrite
 from app.services import groups as groups_service
@@ -185,46 +185,47 @@ def target_progress(group: MemberGroup, session: DbSession) -> TargetProgress:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No target set") from None
 
 
-def _telegram_settings(chat_id: int | None) -> TelegramSettings:
-    """Include the bot's username so the UI can tell people who to add to their chat."""
+def _telegram_settings(session, group_id: int) -> TelegramSettings:
+    """Always includes a pairing code, so the setup screen has something to show."""
+    integration = notifications_service.get_integration(session, group_id)
     bot_username = None
     try:
         bot_username = telegram.get_me().get("username")
     except telegram.TelegramError:
         # A missing or broken token shouldn't stop the settings page rendering.
         pass
+
     return TelegramSettings(
-        telegram_chat_id=chat_id,
-        is_configured=chat_id is not None,
+        is_configured=bool(integration and integration.telegram_chat_id),
+        chat_title=integration.telegram_chat_title if integration else None,
+        pairing_code=notifications_service.issue_pairing_code(session, group_id),
         bot_username=bot_username,
     )
 
 
 @router.get(
     "/{group_id}/telegram",
-    summary="Get the group's Telegram settings",
+    summary="Telegram connection status and pairing code",
     response_model=TelegramSettings,
 )
 def get_telegram(group: MemberGroup, session: DbSession) -> TelegramSettings:
-    integration = notifications_service.get_integration(session, group.id)
-    return _telegram_settings(integration.telegram_chat_id if integration else None)
+    return _telegram_settings(session, group.id)
 
 
-@router.put(
+@router.delete(
     "/{group_id}/telegram",
-    summary="Connect (or disconnect) a Telegram chat",
-    description="Pass a chat id to connect it, or null to turn notifications off. Members only.",
+    summary="Disconnect the Telegram chat",
     response_model=TelegramSettings,
 )
-def put_telegram(body: TelegramWrite, group: MemberGroup, session: DbSession) -> TelegramSettings:
-    integration = notifications_service.set_telegram_chat(session, group.id, body.telegram_chat_id)
-    return _telegram_settings(integration.telegram_chat_id)
+def delete_telegram(group: MemberGroup, session: DbSession) -> TelegramSettings:
+    notifications_service.set_telegram_chat(session, group.id, None)
+    return _telegram_settings(session, group.id)
 
 
 @router.post(
     "/{group_id}/telegram/test",
     summary="Send a test message to the connected chat",
-    description="Confirms the bot is in the chat and the id is right, without waiting for a workout.",
+    description="Confirms the bot can post, without waiting for a workout.",
     response_model=TelegramTestResult,
 )
 def test_telegram(group: MemberGroup, session: DbSession) -> TelegramTestResult:
@@ -232,7 +233,7 @@ def test_telegram(group: MemberGroup, session: DbSession) -> TelegramTestResult:
     chat_id = integration.telegram_chat_id if integration else None
     if chat_id is None:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="No Telegram chat connected"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="No Telegram chat connected yet"
         )
     try:
         telegram.send_message(

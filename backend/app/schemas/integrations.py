@@ -1,19 +1,15 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class TelegramSettings(BaseModel):
-    """A group's Telegram wiring. `null` chat id means notifications are off."""
+    """A group's Telegram wiring, as the setup screen needs it."""
 
-    telegram_chat_id: int | None = None
     is_configured: bool = False
+    # Shown so people can confirm they connected the chat they meant to.
+    chat_title: str | None = None
+    # The code to send as "/connect <code>" in the chat.
+    pairing_code: str | None = None
     bot_username: str | None = None
-
-
-class TelegramWrite(BaseModel):
-    # Group chats are negative and can exceed int32, hence a plain int with no bounds.
-    telegram_chat_id: int | None = Field(
-        default=None, description="Telegram chat id, e.g. -1001234567890. Null disables."
-    )
 
 
 class TelegramTestResult(BaseModel):

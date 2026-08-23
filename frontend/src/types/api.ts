@@ -184,8 +184,9 @@ export interface TargetProgress {
 }
 
 export interface TelegramSettings {
-  telegram_chat_id: number | null
   is_configured: boolean
+  chat_title: string | null
+  pairing_code: string | null
   bot_username: string | null
 }
 

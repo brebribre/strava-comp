@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { useTargetForm } from '@/hooks/useTargetForm'
@@ -13,6 +14,10 @@ const router = useRouter()
 const groupId = () => Number(route.params.id)
 const { form, exists, isLoading, isSaving, saved, error, save, remove } = useTargetForm(groupId)
 const telegram = useTelegramSettings(groupId)
+
+// Only poll while someone is actually looking at the setup steps.
+onMounted(() => telegram.startPolling())
+onUnmounted(() => telegram.stopPolling())
 
 const periods = [
   { value: 'week', label: 'Week' },
@@ -159,44 +164,90 @@ async function handleSave() {
       </div>
 
       <AppCard title="Telegram notifications">
-        <AppAlert v-if="telegram.error.value" tone="error" class="mb-3">
+        <AppAlert v-if="telegram.error.value" tone="error" class="mb-4">
           {{ telegram.error.value }}
         </AppAlert>
-        <AppAlert v-else-if="telegram.notice.value" tone="success" class="mb-3">
+        <AppAlert v-else-if="telegram.notice.value" tone="success" class="mb-4">
           {{ telegram.notice.value }}
         </AppAlert>
 
-        <p class="mb-4 text-sm text-ink-muted">
-          Post every qualifying activity to a Telegram group.
-          <template v-if="telegram.botUsername.value">
-            Add
-            <code class="rounded-sm bg-raised px-1 py-0.5">@{{ telegram.botUsername.value }}</code>
-            to the chat, send a message there, then open
-            <code class="rounded-sm bg-raised px-1 py-0.5">getUpdates</code> to find the chat id.
-          </template>
-        </p>
+        <!-- Connected: say which chat, and offer the two things that matter. -->
+        <template v-if="telegram.isConfigured.value">
+          <p class="text-sm text-ink">
+            Connected to
+            <strong>{{ telegram.chatTitle.value ?? 'your Telegram chat' }}</strong>.
+            Every qualifying activity is posted there.
+          </p>
+          <div class="mt-4 flex flex-wrap gap-2">
+            <AppButton
+              variant="secondary"
+              :loading="telegram.isTesting.value"
+              @click="telegram.sendTest()"
+            >
+              Send test message
+            </AppButton>
+            <AppButton
+              variant="ghost"
+              :loading="telegram.isDisconnecting.value"
+              @click="telegram.disconnect()"
+            >
+              Disconnect
+            </AppButton>
+          </div>
+        </template>
 
-        <div class="flex flex-wrap items-end gap-3">
-          <label class="block">
-            <span class="mb-1.5 block text-xs font-medium text-ink-muted">Chat id</span>
-            <input
-              v-model="telegram.chatId.value"
-              inputmode="numeric"
-              placeholder="-1001234567890"
-              class="w-56 rounded-md border border-line bg-surface px-3 py-2 text-sm text-ink outline-none placeholder:text-ink-subtle transition-colors duration-(--duration-quick) focus:border-ink"
-            />
-          </label>
-          <AppButton :loading="telegram.isSaving.value" @click="telegram.save()">Save</AppButton>
-          <AppButton
-            variant="secondary"
-            :disabled="!telegram.isConfigured.value"
-            :loading="telegram.isTesting.value"
-            @click="telegram.sendTest()"
-          >
-            Send test message
-          </AppButton>
-        </div>
-        <p class="mt-2 text-xs text-ink-subtle">Leave empty and save to turn notifications off.</p>
+        <!-- Not connected: three steps, no chat ids, no developer tools. -->
+        <template v-else>
+          <ol class="space-y-4 text-sm text-ink">
+            <li class="flex gap-3">
+              <span
+                class="flex size-6 shrink-0 items-center justify-center rounded-sm border border-line text-xs text-ink-muted"
+              >
+                1
+              </span>
+              <span>
+                Open the Telegram group you want the updates in, and add
+                <strong v-if="telegram.botUsername.value">@{{ telegram.botUsername.value }}</strong>
+                <strong v-else>the Bruderbande bot</strong>
+                as a member.
+              </span>
+            </li>
+            <li class="flex gap-3">
+              <span
+                class="flex size-6 shrink-0 items-center justify-center rounded-sm border border-line text-xs text-ink-muted"
+              >
+                2
+              </span>
+              <div class="min-w-0 flex-1">
+                <p>Send this message in that group:</p>
+                <div class="mt-2 flex flex-wrap items-center gap-2">
+                  <code
+                    class="rounded-sm border border-line bg-raised px-2.5 py-1.5 text-sm tracking-wide text-ink"
+                  >
+                    {{ telegram.connectCommand.value }}
+                  </code>
+                  <AppButton variant="secondary" @click="telegram.copyCommand()">
+                    {{ telegram.copied.value ? 'Copied' : 'Copy' }}
+                  </AppButton>
+                </div>
+              </div>
+            </li>
+            <li class="flex gap-3">
+              <span
+                class="flex size-6 shrink-0 items-center justify-center rounded-sm border border-line text-xs text-ink-muted"
+              >
+                3
+              </span>
+              <span>
+                The bot replies to confirm, and this page updates by itself.
+              </span>
+            </li>
+          </ol>
+          <p class="mt-4 text-xs text-ink-subtle">
+            The code is specific to this group. Anyone with it can connect a chat, so only
+            share it with people you'd invite here anyway.
+          </p>
+        </template>
       </AppCard>
     </template>
   </div>

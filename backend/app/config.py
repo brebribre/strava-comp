@@ -37,6 +37,8 @@ class Settings(BaseSettings):
 
     # From @BotFather. Empty disables Telegram notifications entirely.
     telegram_bot_token: str = ""
+    # Sent by Telegram as X-Telegram-Bot-Api-Secret-Token; proves an update is really theirs.
+    telegram_webhook_secret: str = "dev-telegram-secret"
 
     frontend_origin: str = "http://localhost:5173"
     # Comma-separated extra origins allowed by CORS, e.g. a Railway preview URL.

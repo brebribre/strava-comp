@@ -155,13 +155,64 @@ def main() -> None:
         with Session(engine) as session:
             check("retry succeeds", notifications.announce_activity(session, activity_id) == 1)
 
-        print("\napi")
+        print("\npairing by code")
+        with Session(engine) as session:
+            notifications.set_telegram_chat(session, group_id, None)
+            code = notifications.issue_pairing_code(session, group_id)
+            check("code issued", len(code) == 6 and code.isalnum(), code)
+            check("code is stable until used", notifications.issue_pairing_code(session, group_id) == code)
+
+            check("unknown code connects nothing",
+                  notifications.connect_by_code(session, "ZZZZZZ", -42, "Nope") is None)
+
+            group = notifications.connect_by_code(session, code.lower(), -4242, "Family")
+            check("case-insensitive match", group is not None and group.id == group_id)
+            integration = notifications.get_integration(session, group_id)
+            check("chat id stored", integration.telegram_chat_id == -4242)
+            check("chat title stored", integration.telegram_chat_title == "Family")
+            check("code rotated after use", integration.pairing_code != code,
+                  "a forwarded message can't be replayed")
+
+            check("disconnect by chat id",
+                  notifications.disconnect_chat(session, -4242) is not None)
+            check("chat cleared", notifications.get_integration(session, group_id).telegram_chat_id is None)
+
+        print("\ntelegram webhook endpoint")
         client = TestClient(app)
+        with Session(engine) as session:
+            code = notifications.issue_pairing_code(session, group_id)
+
+        sent_messages: list[tuple[int, str]] = []
+        notifications.telegram.send_message = lambda chat_id, text: sent_messages.append((chat_id, text))
+        import app.api.routes.telegram as telegram_route
+        telegram_route.telegram.send_message = lambda chat_id, text: sent_messages.append((chat_id, text))
+
+        payload = {"message": {"chat": {"id": -777, "title": "Chat", "type": "group"},
+                               "text": f"/connect@BruderBandeBot {code}"}}
+        r = client.post("/telegram/webhook", json=payload,
+                        headers={"X-Telegram-Bot-Api-Secret-Token": "wrong"})
+        check("bad secret ignored", r.json()["status"] == "ignored")
+        with Session(engine) as session:
+            check("nothing connected", notifications.get_integration(session, group_id).telegram_chat_id is None)
+
+        r = client.post("/telegram/webhook", json=payload,
+                        headers={"X-Telegram-Bot-Api-Secret-Token": settings.telegram_webhook_secret})
+        check("valid secret accepted", r.json()["status"] == "ok")
+        with Session(engine) as session:
+            check("connected via webhook",
+                  notifications.get_integration(session, group_id).telegram_chat_id == -777)
+        check("bot confirmed in chat", any("Notify Test" in text for _, text in sent_messages),
+              str(sent_messages))
+
+        print("\napi")
         client.cookies.set(settings.session_cookie_name, create_session_token(ALICE_ID))
         r = client.get(f"/groups/{group_id}/telegram")
-        check("settings readable", r.status_code == 200 and r.json()["is_configured"] is True)
+        body = r.json()
+        check("settings readable", r.status_code == 200 and body["is_configured"] is True)
+        check("chat title exposed", body["chat_title"] == "Chat")
+        check("pairing code always available", bool(body["pairing_code"]))
 
-        r = client.put(f"/groups/{group_id}/telegram", json={"telegram_chat_id": None})
+        r = client.delete(f"/groups/{group_id}/telegram")
         check("can disconnect", r.status_code == 200 and r.json()["is_configured"] is False)
 
         r = client.post(f"/groups/{group_id}/telegram/test")

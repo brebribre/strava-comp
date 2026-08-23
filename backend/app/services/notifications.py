@@ -1,6 +1,7 @@
 """Announcing finished activities to a group's Telegram chat."""
 
 import logging
+import secrets
 
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
@@ -16,6 +17,7 @@ from app.models import (
     GroupMembership,
     GroupTarget,
 )
+from app.models.base import utcnow
 from app.schemas.target import TargetRules
 from app.services.share_card import render_activity_card
 from app.services.target import qualifies
@@ -27,19 +29,86 @@ def get_integration(session: Session, group_id: int) -> GroupIntegration | None:
     return session.get(GroupIntegration, group_id)
 
 
-def set_telegram_chat(session: Session, group_id: int, chat_id: int | None) -> GroupIntegration:
+def _integration(session: Session, group_id: int) -> GroupIntegration:
     integration = session.get(GroupIntegration, group_id)
     if integration is None:
-        integration = GroupIntegration(group_id=group_id, telegram_chat_id=chat_id)
-    else:
-        integration.telegram_chat_id = chat_id
-        from app.models.base import utcnow
+        integration = GroupIntegration(group_id=group_id)
+        session.add(integration)
+        session.commit()
+        session.refresh(integration)
+    return integration
 
-        integration.updated_at = utcnow()
+
+def set_telegram_chat(
+    session: Session,
+    group_id: int,
+    chat_id: int | None,
+    chat_title: str | None = None,
+) -> GroupIntegration:
+    integration = _integration(session, group_id)
+    integration.telegram_chat_id = chat_id
+    integration.telegram_chat_title = chat_title if chat_id is not None else None
+    integration.updated_at = utcnow()
     session.add(integration)
     session.commit()
     session.refresh(integration)
     return integration
+
+
+# Characters that survive being read aloud and retyped: no O/0, I/1, etc.
+_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+_CODE_LENGTH = 6
+
+
+def issue_pairing_code(session: Session, group_id: int) -> str:
+    """Mint (or reuse) the code the user types into their Telegram chat."""
+    integration = _integration(session, group_id)
+    if not integration.pairing_code:
+        integration.pairing_code = "".join(secrets.choice(_CODE_ALPHABET) for _ in range(_CODE_LENGTH))
+        integration.updated_at = utcnow()
+        session.add(integration)
+        session.commit()
+        session.refresh(integration)
+    return integration.pairing_code
+
+
+def connect_by_code(
+    session: Session, code: str, chat_id: int, chat_title: str | None
+) -> Group | None:
+    """Link a Telegram chat to whichever group owns this pairing code.
+
+    Returns the group, or None if the code is unknown. The code is rotated on success so a
+    forwarded message can't be replayed to hijack the connection later.
+    """
+    integration = session.exec(
+        select(GroupIntegration).where(GroupIntegration.pairing_code == code.strip().upper())
+    ).first()
+    if integration is None:
+        return None
+
+    integration.telegram_chat_id = chat_id
+    integration.telegram_chat_title = chat_title
+    integration.pairing_code = "".join(secrets.choice(_CODE_ALPHABET) for _ in range(_CODE_LENGTH))
+    integration.updated_at = utcnow()
+    session.add(integration)
+    session.commit()
+
+    return session.get(Group, integration.group_id)
+
+
+def disconnect_chat(session: Session, chat_id: int) -> Group | None:
+    """Unlink whichever group is bound to this chat — used by /disconnect in Telegram."""
+    integration = session.exec(
+        select(GroupIntegration).where(GroupIntegration.telegram_chat_id == chat_id)
+    ).first()
+    if integration is None:
+        return None
+    integration.telegram_chat_id = None
+    integration.telegram_chat_title = None
+    integration.updated_at = utcnow()
+    session.add(integration)
+    session.commit()
+    return session.get(Group, integration.group_id)
 
 
 def caption_for(activity: Activity, athlete: Athlete) -> str:

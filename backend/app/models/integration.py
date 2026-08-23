@@ -22,6 +22,12 @@ class GroupIntegration(SQLModel, table=True):
 
     # Telegram chat IDs are negative for groups and can exceed int32.
     telegram_chat_id: int | None = Field(default=None, sa_column=Column(BigInteger, nullable=True))
+    # Human-readable name of the connected chat, so the UI can confirm *which* group.
+    telegram_chat_title: str | None = None
+
+    # Short code the user sends as "/connect <code>" in their Telegram chat. This is how
+    # the bot learns the chat id without anyone having to look one up.
+    pairing_code: str | None = Field(default=None, index=True)
 
     created_at: datetime = Field(default_factory=utcnow, sa_column=tz_column(nullable=False))
     updated_at: datetime = Field(default_factory=utcnow, sa_column=tz_column(nullable=False))
