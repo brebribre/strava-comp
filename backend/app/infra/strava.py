@@ -4,6 +4,7 @@ Every outbound Strava call lives here, so services never touch httpx directly.
 Phase 4 adds refresh_access_token; Phase 6 adds activity fetching.
 """
 
+from datetime import datetime
 from typing import Any
 from urllib.parse import urlencode
 
@@ -92,3 +93,60 @@ def exchange_code_for_tokens(code: str) -> dict[str, Any]:
     if "athlete" not in payload:
         raise StravaError("token response missing fields: ['athlete']")
     return payload
+
+
+# Strava's own maximum page size.
+ACTIVITIES_PER_PAGE = 200
+# Safety net: 200 activities/page, so this covers 20k activities before bailing out.
+MAX_ACTIVITY_PAGES = 100
+
+
+def fetch_activities(access_token: str, after: datetime) -> list[dict[str, Any]]:
+    """Every activity for the token's athlete started after `after`, newest page last.
+
+    Pages until Strava returns a short page, which is the documented end-of-list signal.
+    """
+    activities: list[dict[str, Any]] = []
+    headers = {"Authorization": f"Bearer {access_token}"}
+    after_epoch = int(after.timestamp())
+
+    for page in range(1, MAX_ACTIVITY_PAGES + 1):
+        try:
+            response = httpx.get(
+                f"{STRAVA_API_BASE}/athlete/activities",
+                params={"after": after_epoch, "page": page, "per_page": ACTIVITIES_PER_PAGE},
+                headers=headers,
+                timeout=TIMEOUT,
+            )
+        except httpx.HTTPError as exc:
+            raise StravaError(f"could not reach Strava: {exc}") from exc
+
+        if response.status_code == httpx.codes.TOO_MANY_REQUESTS:
+            raise StravaError("rate limited by Strava")
+        if response.status_code != httpx.codes.OK:
+            raise StravaError(f"activity fetch failed ({response.status_code}): {response.text[:200]}")
+
+        batch = response.json()
+        if not batch:
+            break
+        activities.extend(batch)
+        if len(batch) < ACTIVITIES_PER_PAGE:
+            break
+
+    return activities
+
+
+def fetch_activity(access_token: str, activity_id: int) -> dict[str, Any]:
+    """A single activity by ID — used by the Phase 7 webhook handler."""
+    try:
+        response = httpx.get(
+            f"{STRAVA_API_BASE}/activities/{activity_id}",
+            headers={"Authorization": f"Bearer {access_token}"},
+            timeout=TIMEOUT,
+        )
+    except httpx.HTTPError as exc:
+        raise StravaError(f"could not reach Strava: {exc}") from exc
+
+    if response.status_code != httpx.codes.OK:
+        raise StravaError(f"activity {activity_id} fetch failed ({response.status_code})")
+    return response.json()

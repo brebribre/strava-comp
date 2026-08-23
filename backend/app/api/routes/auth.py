@@ -1,7 +1,7 @@
 import secrets
 from urllib.parse import urlencode
 
-from fastapi import APIRouter, HTTPException, Request, Response, status
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, Response, status
 from fastapi.responses import RedirectResponse
 
 from app.api.deps import CurrentAthlete, DbSession
@@ -9,6 +9,7 @@ from app.config import get_settings
 from app.infra.strava import StravaError, build_authorize_url
 from app.schemas.auth import AthleteMe, LogoutResponse
 from app.services import auth as auth_service
+from app.services.activities import backfill_in_background
 from app.services.session import create_oauth_state, create_session_token, read_oauth_state
 
 router = APIRouter(tags=["auth"])
@@ -27,7 +28,7 @@ def _set_session_cookie(response: Response, athlete_id: int) -> None:
         max_age=settings.session_max_age_seconds,
         httponly=True,
         secure=settings.cookie_secure,
-        samesite="lax",  # lax still sends the cookie on the top-level redirect back from Strava
+        samesite=settings.cookie_samesite,  # lax still sends the cookie on the redirect back from Strava
         path="/",
     )
 
@@ -61,7 +62,7 @@ def strava_login() -> RedirectResponse:
         max_age=_STATE_MAX_AGE,
         httponly=True,
         secure=settings.cookie_secure,
-        samesite="lax",
+        samesite=settings.cookie_samesite,
         path="/",
     )
     return response
@@ -80,6 +81,7 @@ def strava_login() -> RedirectResponse:
 def strava_callback(
     request: Request,
     session: DbSession,
+    background: BackgroundTasks,
     code: str | None = None,
     state: str | None = None,
     scope: str | None = None,
@@ -107,6 +109,9 @@ def strava_callback(
         athlete = auth_service.login_with_code(session, code)
     except StravaError:
         return _frontend_redirect(error="strava_exchange_failed")
+
+    # Pull recent history in the background so login isn't held up by Strava.
+    background.add_task(backfill_in_background, athlete.athlete_id)
 
     response = _frontend_redirect(login="ok")
     _set_session_cookie(response, athlete.athlete_id)

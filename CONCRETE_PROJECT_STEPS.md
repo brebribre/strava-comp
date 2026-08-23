@@ -137,7 +137,7 @@ the real athlete's expiry, confirmed the call went to Strava and fresh credentia
 
 ---
 
-## Phase 5: Groups — Create, Join, List
+## Phase 5: Groups — Create, Join, List ✅ DONE
 
 **Goal:** Athletes can form and join groups before any activity data is shown.
 
@@ -152,22 +152,57 @@ the real athlete's expiry, confirmed the call went to Strava and fresh credentia
 4. `GET /groups/{group_id}/members` — list athletes in a group (name + athlete_id)
 5. Build a `require_group_member(group_id)` dependency — 403s if current athlete isn't in `group_memberships` for that group; use it on every group-scoped endpoint from here on
 6. **Test**: create a group with your account, note the invite code, join it with a second test Strava account, confirm both show up in `/groups/{id}/members`
+   — automated with two seeded athletes (no second Strava account needed):
+   ```bash
+   cd backend && .venv/bin/python -m scripts.check_groups
+   ```
+   For manual multi-member testing, drop a fake member into a group by invite code:
+   ```bash
+   cd backend && .venv/bin/python -m scripts.dev_seed_member <invite_code> "Dev Brother"
+   cd backend && .venv/bin/python -m scripts.dev_seed_member --remove
+   ```
+   Dev athletes use IDs ≥ 999_100_000 and hold no usable tokens, so activity syncing skips them.
+
+Implementation notes: `join` is idempotent (a shared link can be clicked twice); `invite_code`
+is only ever returned to existing members; `require_group_member` returns the `Group` so routes
+don't reload it, and 404s a missing group before 403ing a non-member.
 
 ✅ **Checkpoint:** Groups can be created and joined; membership is enforced.
+*(verified: 25 seeded checks — create/join/idempotent-join/bad-code 404/list-scoping/member list,
+plus 403 for non-members, 403 across groups, 404 for missing groups, 401 anonymous on every route.
+Live: real group "Alvin Brothers" created over HTTP as athlete 168817846 with a dev member joined)*
 
 ---
 
-## Phase 6: Manual Activity Fetch + Historical Backfill
+## Phase 6: Manual Activity Fetch + Historical Backfill ✅ DONE
 
 **Goal:** Pull and store an athlete's past activities.
+
+Backfill window is **7 days**, not 3 months — set by `BACKFILL_DAYS` in `.env`.
 
 1. Write `fetch_activities(athlete_id, after_timestamp)`:
    - calls `GET /athlete/activities?after=...&page=N&per_page=200` in a loop until an empty page
 2. Write `save_activities_to_db(athlete_id, activities)` — upsert into `activities`
-3. Wire backfill into the OAuth callback: right after first login, kick off a backfill for the last 3 months as a `BackgroundTask`
+3. Wire backfill into the OAuth callback: right after first login, kick off a backfill for the last
+   `BACKFILL_DAYS` days as a `BackgroundTask`
 4. **Test**: log in with your real account, confirm your recent activities appear in `activities`
+   ```bash
+   cd backend && .venv/bin/python -m scripts.check_activities          # stubbed
+   cd backend && .venv/bin/python -m scripts.check_activities --live   # real Strava fetch
+   ```
+   `POST /activities/sync?days=N` re-runs the sync on demand (added for testing; the Phase 9
+   frontend can use it as a manual refresh).
+
+Implementation notes: writes go through a Postgres `INSERT … ON CONFLICT DO UPDATE`, so a re-sync
+updates renamed/edited activities in place instead of duplicating them. `created_at` is excluded
+from the update set, so it keeps meaning "first seen". Batches are de-duplicated by ID before
+insert, since one statement cannot touch the same row twice. Backfill failures are caught and
+logged — a Strava outage must never break the login redirect.
 
 ✅ **Checkpoint:** Logging in populates real historical data (independent of groups — this is per-athlete).
+*(verified: 22 stubbed checks incl. field mapping, upsert-not-duplicate, in-batch dedupe, empty
+result, login-triggered backfill and login surviving a backfill failure. Live: 6 real activities
+stored — Runs, WeightTraining, Tennis)*
 
 ---
 

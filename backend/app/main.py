@@ -14,6 +14,7 @@ TAGS_METADATA = [
     {"name": "system", "description": "Service and database health."},
     {"name": "auth", "description": "Strava OAuth login and session handling."},
     {"name": "groups", "description": "Create, join and inspect athlete groups."},
+    {"name": "activities", "description": "Syncing activities from Strava."},
     {"name": "strava", "description": "Strava webhook subscription endpoints."},
 ]
 
@@ -41,7 +42,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_origin],
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
