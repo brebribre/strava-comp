@@ -1,0 +1,8 @@
+{
+  "name": "strava-comp",
+  "private": true,
+  "description": "Root package exists only so Railway's IaC file can resolve `railway/iac`.",
+  "devDependencies": {
+    "railway": "^3.10.0"
+  }
+}

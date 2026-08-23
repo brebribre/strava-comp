@@ -206,7 +206,7 @@ stored — Runs, WeightTraining, Tennis)*
 
 ---
 
-## Phase 7: Webhook Subscription + Handler
+## Phase 7: Webhook Subscription + Handler ✅ CODE COMPLETE — subscription not yet registered
 
 **Goal:** New activities get captured automatically going forward, for any athlete in any group.
 
@@ -228,8 +228,28 @@ stored — Runs, WeightTraining, Tennis)*
      -d verify_token=your_secret_string
    ```
 5. **Test**: log an activity on Strava, confirm it lands in your DB within seconds. Note: this webhook is app-wide — it fires for every authorized athlete regardless of which group(s) they're in.
+   ```bash
+   cd backend && .venv/bin/python -m scripts.check_webhooks
+   ```
+
+Implementation notes:
+- `GET /strava/webhook` echoes `hub.challenge` only when `hub.verify_token` matches
+  `STRAVA_VERIFY_TOKEN` (constant-time compare).
+- `POST /strava/webhook` **always** returns 200, even for garbage payloads — Strava requires an
+  ack within 2 seconds and may disable a subscription that errors. Real work runs in a background
+  task with its own DB session.
+- Events for athletes we don't have are ignored without calling Strava. This matters because one
+  Strava app serves both local and production, so **both deployments receive every event**.
+- `aspect_type: delete` removes the row; athlete deauthorization deletes the Athlete row, which
+  cascades to their activities and memberships (groups they created survive, `created_by` is
+  SET NULL).
+- **Strava allows only one subscription per application.** `GET /push_subscriptions` lists it;
+  delete the old one before registering a new callback URL.
 
 ✅ **Checkpoint:** New activities auto-populate for every authorized athlete.
+*(verified locally: 20 checks — handshake incl. wrong token and wrong mode, create/update/delete,
+unknown athlete, malformed and non-JSON payloads, Strava failure mid-handling, deauthorization.
+Still pending: registering the push subscription against the deployed URL)*
 
 ---
 

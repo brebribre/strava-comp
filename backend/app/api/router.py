@@ -2,10 +2,11 @@
 
 from fastapi import APIRouter
 
-from app.api.routes import activities, auth, groups, health
+from app.api.routes import activities, auth, groups, health, webhooks
 
 api_router = APIRouter()
 api_router.include_router(health.router)
 api_router.include_router(auth.router)
 api_router.include_router(groups.router)
 api_router.include_router(activities.router)
+api_router.include_router(webhooks.router)

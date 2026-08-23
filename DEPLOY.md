@@ -13,6 +13,15 @@ Railway builds from GitHub, so everything here starts with your code pushed to
 > `railway.json` / `railway.toml` ("Config as Code") is **deprecated** — Railway now wants
 > `.railway/railway.ts`. This repo uses the new format; the CLI finds it by walking up from
 > the current directory, so it lives at the repo root, not under `backend/`.
+>
+> **The root `package.json` exists solely for this.** `railway.ts` imports from `railway/iac`,
+> which Node resolves from `node_modules` — without it, `railway config plan` dies with
+> `ERR_MODULE_NOT_FOUND: Cannot find package 'railway'`, even for the CLI's own scaffold.
+> Railway's docs don't mention this. After a fresh clone:
+>
+> ```bash
+> npm install
+> ```
 
 ---
 
@@ -167,6 +176,7 @@ already be deployed and healthy when you run this.
 |---|---|
 | Build succeeds, deploy crashes instantly | Root Directory not set to `backend` |
 | `Config as Code is deprecated` warning | A leftover `railway.json`/`railway.toml` — this repo uses `.railway/railway.ts` |
+| `ERR_MODULE_NOT_FOUND: Cannot find package 'railway'` | Run `npm install` in the repo root — `railway.ts` needs the `railway` npm package |
 | `ModuleNotFoundError: psycopg2` | `DATABASE_URL` didn't go through `config.py`'s rewrite — check the variable is set on the *backend* service |
 | Health check fails, logs show connection refused | Start command not binding `0.0.0.0`/`$PORT` — confirm `.railway/railway.ts` was applied |
 | `redirect_uri` mismatch at Strava | `STRAVA_REDIRECT_URI` and the callback domain disagree, or one has a trailing slash |

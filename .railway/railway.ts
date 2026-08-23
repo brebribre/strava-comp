@@ -1,9 +1,10 @@
-import { defineRailway, postgres, preserve, project, service } from "railway/iac";
+import { defineRailway, github, postgres, preserve, project, service } from "railway/iac";
 
 export default defineRailway(() => {
   const db = postgres("postgres");
 
   const backend = service("backend", {
+    source: github("brebribre/strava-comp"),
     // Monorepo: only build from backend/, ignore the frontend.
     rootDirectory: "backend",
     // Railway assigns $PORT at runtime; binding 0.0.0.0 is required to be reachable.
@@ -32,7 +33,7 @@ export default defineRailway(() => {
     },
   });
 
-  return project("strava-comp", {
+  return project("Strava Brothers", {
     resources: [backend, db],
   });
 });
