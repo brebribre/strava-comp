@@ -5,10 +5,14 @@ Railway builds from GitHub, so everything here starts with your code pushed to
 
 | File | Why it matters |
 |---|---|
-| `backend/railway.json` | Start command (`--host 0.0.0.0 --port $PORT`), health check on `/health` |
+| `.railway/railway.ts` | Infrastructure as Code: service, root directory, start command, health check, Postgres |
 | `backend/.python-version` | Pins Python 3.12 so Nixpacks doesn't pick something older |
 | `backend/requirements.txt` | What Nixpacks installs |
 | `app/config.py` | Rewrites Railway's `postgresql://` into the `postgresql+psycopg://` form SQLAlchemy needs |
+
+> `railway.json` / `railway.toml` ("Config as Code") is **deprecated** — Railway now wants
+> `.railway/railway.ts`. This repo uses the new format; the CLI finds it by walking up from
+> the current directory, so it lives at the repo root, not under `backend/`.
 
 ---
 
@@ -50,35 +54,42 @@ brew install railway
 railway login && railway init
 ```
 
-## Step 3 — Point the service at `backend/`
+## Step 3 — Apply the infrastructure
 
-This is the step people miss on a monorepo. In the service → **Settings** → **Source**:
+`.railway/railway.ts` already declares everything structural: the service, `rootDirectory:
+"backend"` (the step people miss on a monorepo), the start command, the health check, and a
+Postgres database wired to `DATABASE_URL`.
 
-- **Root Directory**: `backend`
-- **Config file path**: `backend/railway.json` (Railway wants this path from the repo root,
-  *not* relative to the root directory you just set)
+Preview it first — `plan` only reads state and prints what would change:
 
-Then redeploy. Nixpacks will detect `requirements.txt` and install with pip.
+```bash
+railway config plan
+```
 
-## Step 4 — Add Postgres
+Read the output before continuing. Anything marked **destructive** (deleting a service or a
+variable) needs your attention — those are the lines worth reading twice. Then:
 
-1. In the project canvas: **New** → **Database** → **PostgreSQL**
-2. Open your **backend** service → **Variables** → **New Variable**:
-
-   ```
-   DATABASE_URL = ${{Postgres.DATABASE_URL}}
-   ```
-
-   That `${{...}}` is a Railway variable reference — it stays correct if the database is
-   ever recreated. Use the private/internal URL Railway offers; traffic stays inside the
-   project and doesn't count as egress.
+```bash
+railway config apply
+```
 
 Tables are created automatically on boot by `create_db_and_tables()` in the app lifespan.
 (That's fine now; a real Alembic migration is worth adding before there's data you care about.)
 
+### About secrets in that file
+
+The file is committed to GitHub, so no secret goes in it. Credentials are declared as
+`preserve()`, which tells Railway to keep whatever is already set in the dashboard rather
+than overwriting it. Set their values in the dashboard (step 5), not here.
+
+If `railway config plan` complains about `preserve`, drop those lines from `env` and set the
+variables purely in the dashboard — but then check the plan for any "delete variable" entries
+before applying.
+
 ## Step 5 — Set the remaining variables
 
-In the backend service → **Variables** → **Raw Editor**:
+These are secrets and environment-specific URLs, so they belong in the dashboard, not in
+`railway.ts`. In the backend service → **Variables** → **Raw Editor**:
 
 ```
 STRAVA_CLIENT_ID=<from strava.com/settings/api>
@@ -155,11 +166,13 @@ already be deployed and healthy when you run this.
 | Symptom | Cause |
 |---|---|
 | Build succeeds, deploy crashes instantly | Root Directory not set to `backend` |
+| `Config as Code is deprecated` warning | A leftover `railway.json`/`railway.toml` — this repo uses `.railway/railway.ts` |
 | `ModuleNotFoundError: psycopg2` | `DATABASE_URL` didn't go through `config.py`'s rewrite — check the variable is set on the *backend* service |
-| Health check fails, logs show connection refused | Start command not binding `0.0.0.0`/`$PORT` — confirm `railway.json` is being read |
+| Health check fails, logs show connection refused | Start command not binding `0.0.0.0`/`$PORT` — confirm `.railway/railway.ts` was applied |
 | `redirect_uri` mismatch at Strava | `STRAVA_REDIRECT_URI` and the callback domain disagree, or one has a trailing slash |
 | `403 Application Status Inactive` | The app owner's Strava subscription lapsed |
 | `403 Limit of connected athletes exceeded` | The default 1-athlete cap — request an increase from Strava |
 
-Sources: [Railway monorepo docs](https://docs.railway.com/guides/monorepo),
+Sources: [Railway Infrastructure as Code](https://docs.railway.com/infrastructure-as-code),
+[IaC reference](https://docs.railway.com/infrastructure-as-code/reference),
 [Strava API FAQ](https://communityhub.strava.com/developers-knowledge-base-14/strava-api-faq-12906)
