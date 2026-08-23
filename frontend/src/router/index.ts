@@ -81,15 +81,24 @@ router.beforeEach(async (to) => {
   if (!to.meta.public && !athlete) {
     return { name: 'login' }
   }
-  // Already logged in and heading to the login page — the OAuth redirect lands here
-  // with ?login=ok, so send them on to the app.
-  if (to.name === 'login' && athlete) {
-    // Followed an invite link while logged out: the backend already joined them and
-    // named the group, so land them in it rather than on the group list.
+
+  /**
+   * Landing back from OAuth.
+   *
+   * The backend redirects to FRONTEND_ORIGIN itself, so this arrives on `/` — not on
+   * `/login`. Keying off `?login=ok` instead of the route name handles both, which the
+   * earlier route-name check did not: following an invite link dropped you on the group
+   * list instead of the group you had just joined.
+   */
+  if (athlete && to.query.login === 'ok') {
     const joined = Number(to.query.group)
-    if (Number.isFinite(joined) && joined > 0) {
-      return { name: 'group-feed', params: { id: joined } }
-    }
+    return Number.isFinite(joined) && joined > 0
+      ? { name: 'group-feed', params: { id: joined } }
+      : { name: 'groups' }
+  }
+
+  // Already logged in but sitting on the login page — nothing to do here.
+  if (to.name === 'login' && athlete) {
     return { name: 'groups' }
   }
   return true
