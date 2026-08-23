@@ -206,7 +206,7 @@ stored — Runs, WeightTraining, Tennis)*
 
 ---
 
-## Phase 7: Webhook Subscription + Handler ✅ CODE COMPLETE — subscription not yet registered
+## Phase 7: Webhook Subscription + Handler ✅ DONE
 
 **Goal:** New activities get captured automatically going forward, for any athlete in any group.
 
@@ -245,6 +245,14 @@ Implementation notes:
   SET NULL).
 - **Strava allows only one subscription per application.** `GET /push_subscriptions` lists it;
   delete the old one before registering a new callback URL.
+
+Registered subscription: **id 367982** → `https://backend-production-96ee.up.railway.app/strava/webhook`
+(production only — local development receives no events while this is registered).
+
+Deployment gotcha: Railway did **not** auto-deploy on push even though the service showed the
+GitHub repo as its source, because the source was set via `railway config apply` rather than
+through the dashboard's connect flow, so no GitHub webhook was registered. Reconnect the repo in
+Settings → Source, or deploy manually with `railway up --service backend`.
 
 ✅ **Checkpoint:** New activities auto-populate for every authorized athlete.
 *(verified locally: 20 checks — handshake incl. wrong token and wrong mode, create/update/delete,

@@ -33,6 +33,8 @@ class Settings(BaseSettings):
     # How far back to pull activities on first login.
     backfill_days: int = 7
 
+    log_level: str = "INFO"
+
     frontend_origin: str = "http://localhost:5173"
     # Comma-separated extra origins allowed by CORS, e.g. a Railway preview URL.
     extra_cors_origins: str = ""

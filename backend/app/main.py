@@ -7,8 +7,10 @@ from fastapi.responses import RedirectResponse
 from app.api.router import api_router
 from app.config import get_settings
 from app.infra.db import create_db_and_tables
+from app.infra.logging import setup_logging
 
 settings = get_settings()
+setup_logging(settings.log_level)
 
 TAGS_METADATA = [
     {"name": "system", "description": "Service and database health."},
