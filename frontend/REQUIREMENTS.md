@@ -64,6 +64,11 @@ View  →  Container  →  Hook  →  API hook  →  fetch
 ## 4. Containers
 
 - A Container is a **feature**: the group dashboard, the login panel, the sidebar.
+- **A container may render another container.** When the same feature block appears on two
+  routes — e.g. the target hero on both the Target tab and the top of the Feed — it stays one
+  container rather than becoming a reusable, because it knows about targets and athletes and
+  so fails the "feature-agnostic" test in §5. Behaviour differences go through props
+  (`show-edit`, `hide-when-unset`), not a copy.
 - A Container **may have its own presentational markup**, but anything generic —
   buttons, tables, cards, spinners, empty states — comes from `src/reusables/`.
 - The **only** TypeScript allowed inside a Container:

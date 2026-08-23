@@ -411,6 +411,10 @@ table, chart, avatar, stat row, tab link, empty state); hooks (`useAuth`, `useGr
 The group page has tabs: **Feed** (Strava-style timeline — every member's activities grouped by
 day, with avatars, sport badges and per-sport stats), **Summary**, **Target** and **Settings**.
 
+The **Feed leads with the target widget** — the same progress ring and headline as the Target
+tab, minus the edit button, and silent when no target is set. Both routes render one
+`TargetHeroContainer`, differing only by props.
+
 The Summary chart has two shapes, because the two questions are different:
 - **Moving time** — one series per member, side by side, for comparing people.
 - **Activities** — **stacked by sport**, colour-coded, for seeing what the training was made of.

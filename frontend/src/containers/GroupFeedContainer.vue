@@ -8,6 +8,7 @@ import AppAvatar from '@/reusables/AppAvatar.vue'
 import AppButton from '@/reusables/AppButton.vue'
 import AppCard from '@/reusables/AppCard.vue'
 import EmptyState from '@/reusables/EmptyState.vue'
+import TargetHeroContainer from '@/containers/TargetHeroContainer.vue'
 import RouteMap from '@/reusables/RouteMap.vue'
 import StatRow from '@/reusables/StatRow.vue'
 
@@ -47,6 +48,9 @@ function statsFor(item: {
 
 <template>
   <div class="mx-auto max-w-2xl space-y-4">
+    <!-- Status glance, not a settings entry: no edit button, and silent when unset. -->
+    <TargetHeroContainer hide-when-unset />
+
     <AppAlert v-if="error" tone="error">{{ error }}</AppAlert>
 
     <p v-if="isLoading" class="py-10 text-center text-sm text-ink-subtle">Loading feed…</p>
