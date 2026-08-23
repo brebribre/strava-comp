@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useLoginError } from '@/hooks/useLoginError'
 import AppAlert from '@/reusables/AppAlert.vue'
 import AppButton from '@/reusables/AppButton.vue'
+import AppLogo from '@/reusables/AppLogo.vue'
 import AppCard from '@/reusables/AppCard.vue'
 
 const route = useRoute()
@@ -17,10 +18,8 @@ const { message } = useLoginError(
 <template>
   <AppCard class="w-full max-w-md">
     <div class="text-center">
-      <h1 class="text-2xl font-bold text-ink">Strava Group Tracker</h1>
-      <p class="mt-2 text-sm text-ink-muted">
-        Compare training with your group.
-      </p>
+      <AppLogo size="lg" align="center" />
+      <p class="mt-3 text-sm text-ink-muted">Compare training with your group.</p>
 
       <AppAlert v-if="message" tone="error" class="mt-4">{{ message }}</AppAlert>
 

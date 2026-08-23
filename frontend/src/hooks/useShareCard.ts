@@ -85,6 +85,38 @@ export function useShareCard() {
     ctx.restore()
   }
 
+  /**
+   * The wordmark, matching AppLogo: heavy, uppercase, tracked out and stretched wider.
+   *
+   * Canvas has no reliable letter-spacing across browsers, so the glyphs are placed one at
+   * a time; the horizontal stretch is a transform, as in the component.
+   */
+  function drawWordmark(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    fontSize: number,
+    color: string,
+  ) {
+    const text = 'BRUDERBANDE'
+    const tracking = fontSize * 0.18
+    ctx.save()
+    ctx.translate(x, y)
+    ctx.scale(1.12, 1)
+    ctx.fillStyle = color
+    ctx.font = `800 ${fontSize}px ${FONT}`
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'alphabetic'
+    let cursor = 0
+    for (const char of text) {
+      ctx.fillText(char, cursor, 0)
+      cursor += ctx.measureText(char).width + tracking
+    }
+    ctx.restore()
+    // Width in unscaled pixels, for callers that need to lay out beside it.
+    return cursor * 1.12
+  }
+
   function drawAvatar(ctx: CanvasRenderingContext2D, name: string, x: number, y: number, size: number) {
     ctx.save()
     ctx.strokeStyle = LINE
@@ -192,9 +224,7 @@ export function useShareCard() {
     ctx.lineTo(WIDTH - PAD, HEIGHT - PAD - 70)
     ctx.stroke()
 
-    ctx.fillStyle = INK_MUTED
-    ctx.font = `500 28px ${FONT}`
-    ctx.fillText('bruderbande.com', PAD, HEIGHT - PAD - 14)
+    drawWordmark(ctx, PAD, HEIGHT - PAD - 14, 30, INK)
 
     return canvas
   }

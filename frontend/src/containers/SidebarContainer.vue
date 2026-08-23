@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useGroups } from '@/hooks/useGroups'
 import { useSidebar } from '@/hooks/useSidebar'
 import AppButton from '@/reusables/AppButton.vue'
+import AppLogo from '@/reusables/AppLogo.vue'
 import SportLoader from '@/reusables/SportLoader.vue'
 
 const route = useRoute()
@@ -46,10 +47,8 @@ async function handleLogout() {
   >
     <div class="flex items-start justify-between border-b border-line p-4">
       <div class="min-w-0">
-        <p class="truncate text-sm font-semibold text-ink">
-          {{ athlete?.name ?? '…' }}
-        </p>
-        <p class="text-xs text-ink-muted">Strava Group Tracker</p>
+        <AppLogo size="sm" />
+        <p class="mt-2 truncate text-xs text-ink-muted">{{ athlete?.name ?? '…' }}</p>
       </div>
       <button
         type="button"

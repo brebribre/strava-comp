@@ -341,6 +341,19 @@ palette in JS: a **tonal ramp** (dark→light, inverted for dark mode) assigned 
 the sorted sport list, never hashed — hashing would drop adjacent stack segments onto
 near-identical greys. Axis, grid and legend colours are passed explicitly per theme.
 
+## 11a-i. Logo
+
+`AppLogo` renders the **BRUDERBANDE** wordmark: extra-bold, uppercase, tracked out at
+`0.18em` and stretched `scaleX(1.12)` — wider than tall by construction, since no system font
+ships an extended width. Sizes `sm` / `md` / `lg`; an `align` prop sets the transform origin,
+because the stretch grows from that origin and a left-anchored logo drifts right of centre
+when its parent centres it.
+
+Used in the sidebar, the mobile top bar, the login screen — and redrawn on the **share card**
+by `drawWordmark` in `useShareCard`, which places glyphs one at a time (canvas has no
+dependable `letterSpacing` across browsers) and applies the same stretch, so the wordmark
+matches wherever it appears.
+
 ## 11c. Share cards
 
 An activity can be exported as a **1080×1350 PNG** — the 4:5 portrait shape chat apps and

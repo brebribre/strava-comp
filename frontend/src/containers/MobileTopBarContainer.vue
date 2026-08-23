@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useSidebar } from '@/hooks/useSidebar'
+import AppLogo from '@/reusables/AppLogo.vue'
 
 const { toggle } = useSidebar()
 </script>
@@ -18,6 +19,6 @@ const { toggle } = useSidebar()
         <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
       </svg>
     </button>
-    <p class="text-sm font-semibold text-ink">Strava Group Tracker</p>
+    <AppLogo size="sm" />
   </header>
 </template>
