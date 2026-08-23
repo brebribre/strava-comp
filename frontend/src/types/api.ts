@@ -49,11 +49,19 @@ export interface GroupSummary {
   members: MemberSummary[]
 }
 
+export interface SportBucket {
+  sport_type: string
+  activity_count: number
+  total_distance: number
+  total_moving_time: number
+}
+
 export interface TrendPoint {
   week_start: string
   activity_count: number
   total_distance: number
   total_moving_time: number
+  by_sport: SportBucket[]
 }
 
 export interface MemberTrend {

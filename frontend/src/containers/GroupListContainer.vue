@@ -85,7 +85,11 @@ async function handleJoin() {
         hint="Create one and share the invite code, or join with a code someone sent you."
       />
       <ul v-else class="divide-y divide-slate-100 dark:divide-slate-700">
-        <li v-for="group in groups" :key="group.id" class="flex items-center justify-between py-3">
+        <li
+          v-for="group in groups"
+          :key="group.id"
+          class="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between"
+        >
           <div>
             <p class="font-medium text-slate-900 dark:text-slate-100">{{ group.name }}</p>
             <p class="text-xs text-slate-500 dark:text-slate-400">
@@ -95,7 +99,7 @@ async function handleJoin() {
               }}</code>
             </p>
           </div>
-          <div class="flex gap-2">
+          <div class="flex flex-wrap gap-2">
             <AppButton variant="ghost" @click="copyInvite(group.invite_code)">
               {{ copied && copyTargetCode === group.invite_code ? 'Link copied' : 'Copy link' }}
             </AppButton>

@@ -19,8 +19,10 @@ export default defineRailway(() => {
 
       BACKFILL_DAYS: "7",
       COOKIE_SECURE: "true",
-      // Set to "none" only once the frontend is on a different domain than the API.
-      COOKIE_SAMESITE: "lax",
+      // The frontend and API are on different railway.app subdomains, which browsers treat
+      // as cross-site, so "lax" would silently drop the session cookie on every API call.
+      // "none" requires Secure=true, which is set above.
+      COOKIE_SAMESITE: "none",
 
       // Secrets live in the Railway dashboard, never in this file.
       // preserve() keeps whatever is already set there instead of overwriting it.
@@ -33,7 +35,23 @@ export default defineRailway(() => {
     },
   });
 
+  const frontend = service("frontend", {
+    source: github("brebribre/strava-comp"),
+    rootDirectory: "frontend",
+    build: "npm run build",
+    // `serve -s` falls back to index.html, which history-mode routes need — without it
+    // /join/<code> and /groups/5/feed 404 on a direct visit or refresh.
+    start: "npm run start",
+    env: {
+      // VITE_* variables are baked in at BUILD time, not read at runtime — changing this
+      // requires a rebuild, not just a restart. Not a secret, so it's declared here rather
+      // than left to the dashboard, where forgetting it would ship a build pointing at
+      // localhost.
+      VITE_API_BASE_URL: "https://backend-production-96ee.up.railway.app",
+    },
+  });
+
   return project("Strava Brothers", {
-    resources: [backend, db],
+    resources: [backend, db, frontend],
   });
 });

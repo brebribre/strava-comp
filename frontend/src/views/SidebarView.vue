@@ -1,14 +1,18 @@
 <script setup lang="ts">
+import MobileTopBarContainer from '@/containers/MobileTopBarContainer.vue'
 import SidebarContainer from '@/containers/SidebarContainer.vue'
 </script>
 
 <template>
-  <!-- Layout only: the sidebar on the left, and whatever container the child route
-       resolves to on the right. -->
+  <!-- Layout only: sidebar (a drawer below lg) plus whatever the child route resolves to. -->
   <div class="flex h-full bg-slate-50 dark:bg-slate-900">
-    <SidebarContainer class="w-64 shrink-0" />
-    <main class="flex-1 overflow-y-auto p-6">
-      <router-view />
-    </main>
+    <SidebarContainer />
+
+    <div class="flex min-w-0 flex-1 flex-col">
+      <MobileTopBarContainer class="lg:hidden" />
+      <main class="flex-1 overflow-y-auto p-4 sm:p-6">
+        <router-view />
+      </main>
+    </div>
   </div>
 </template>

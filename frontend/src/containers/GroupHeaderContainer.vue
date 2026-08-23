@@ -14,7 +14,7 @@ const { copy, copied } = useInviteLink(() => group.value?.invite_code)
 <template>
   <header class="mb-6 border-b border-slate-200 dark:border-slate-700">
     <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-      <h1 class="text-xl font-bold text-slate-900 dark:text-slate-100">
+      <h1 class="min-w-0 truncate text-lg font-bold text-slate-900 sm:text-xl dark:text-slate-100">
         {{ group?.name ?? 'Group' }}
       </h1>
       <div v-if="group" class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
@@ -25,7 +25,7 @@ const { copy, copied } = useInviteLink(() => group.value?.invite_code)
       </div>
     </div>
 
-    <nav class="flex gap-6">
+    <nav class="-mb-px flex gap-5 overflow-x-auto whitespace-nowrap sm:gap-6">
       <TabLink :to="{ name: 'group-feed', params: { id: route.params.id } }" label="Feed" />
       <TabLink :to="{ name: 'group-summary', params: { id: route.params.id } }" label="Summary" />
       <TabLink :to="{ name: 'group-target', params: { id: route.params.id } }" label="Target" />

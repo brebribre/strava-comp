@@ -14,6 +14,7 @@ from app.schemas.summary import (
     GroupTrend,
     MemberSummary,
     MemberTrend,
+    SportBucket,
     SportSummary,
     TrendPoint,
 )
@@ -124,10 +125,12 @@ def group_trend(session: Session, group: Group, days: int) -> GroupTrend:
     rows = []
     if member_ids:
         week = func.date_trunc("week", Activity.start_date).label("week_start")
+        # Grouped by sport as well as week, so the chart can stack by activity type.
         rows = session.exec(
             select(
                 Activity.owner_id,
                 week,
+                Activity.sport_type,
                 func.count().label("activity_count"),
                 func.coalesce(func.sum(Activity.distance), 0.0).label("total_distance"),
                 func.coalesce(func.sum(Activity.moving_time), 0).label("total_moving_time"),
@@ -137,20 +140,39 @@ def group_trend(session: Session, group: Group, days: int) -> GroupTrend:
                 Activity.start_date >= since,
                 Activity.start_date <= until,
             )
-            .group_by(Activity.owner_id, week)
+            .group_by(Activity.owner_id, week, Activity.sport_type)
             .order_by(Activity.owner_id, week)
         ).all()
 
-    by_athlete: dict[int, list[TrendPoint]] = defaultdict(list)
-    for owner_id, week_start, count, distance, moving_time in rows:
-        by_athlete[owner_id].append(
-            TrendPoint(
+    # (athlete, week) -> the week's totals plus its per-sport slices.
+    weeks: dict[tuple[int, datetime], TrendPoint] = {}
+    for owner_id, week_start, sport_type, count, distance, moving_time in rows:
+        point = weeks.get((owner_id, week_start))
+        if point is None:
+            point = TrendPoint(
                 week_start=week_start,
+                activity_count=0,
+                total_distance=0.0,
+                total_moving_time=0,
+                by_sport=[],
+            )
+            weeks[(owner_id, week_start)] = point
+
+        point.activity_count += count
+        point.total_distance += float(distance)
+        point.total_moving_time += int(moving_time)
+        point.by_sport.append(
+            SportBucket(
+                sport_type=sport_type or "Unknown",
                 activity_count=count,
                 total_distance=float(distance),
                 total_moving_time=int(moving_time),
             )
         )
+
+    by_athlete: dict[int, list[TrendPoint]] = defaultdict(list)
+    for (owner_id, _), point in sorted(weeks.items(), key=lambda item: item[0][1]):
+        by_athlete[owner_id].append(point)
 
     return GroupTrend(
         group_id=group.id,

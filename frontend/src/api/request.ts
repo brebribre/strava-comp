@@ -8,12 +8,14 @@
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
 
 export class ApiError extends Error {
-  constructor(
-    public status: number,
-    message: string,
-  ) {
+  // Declared and assigned explicitly: parameter properties are TS-only syntax, which
+  // `erasableSyntaxOnly` (on in this project) forbids.
+  status: number
+
+  constructor(status: number, message: string) {
     super(message)
     this.name = 'ApiError'
+    this.status = status
   }
 
   /** 401 means "not logged in" — the router guard treats this specially. */

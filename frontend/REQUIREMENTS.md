@@ -288,6 +288,25 @@ Upgrade path: if the dashboard grows into something richer (zoom, brushing, many
 swap to ECharts. Keeping all chart code inside a container + hook pair means that swap
 touches one container, not the app.
 
+## 11b. Responsive rules
+
+The app is used on phones as much as laptops, so **mobile is a first-class layout, not an
+afterthought**.
+
+- **Navigation**: below `lg`, the sidebar is an off-canvas drawer with a backdrop, opened
+  from a top bar and closed automatically on navigation. From `lg` up it is static and in
+  flow. State lives in `useUiStore` and is reached through `useSidebar()`.
+- **No horizontal page scroll, ever.** Wide content (tables, charts) scrolls inside its own
+  `overflow-x-auto` container. Check with
+  `document.documentElement.scrollWidth === window.innerWidth`.
+- **Tabs** scroll horizontally rather than wrapping (`overflow-x-auto whitespace-nowrap`).
+- **Tables** keep `overflow-x-auto`; secondary detail (e.g. the per-sport list on the summary
+  row) is `hidden sm:inline` rather than wrapping into a tall column.
+- **Rows of actions** stack with `flex-col sm:flex-row`.
+- Pixel-sized SVGs that CSS can't scale (the progress ring) read `useViewport()`.
+
+Verified at 375×812, 768×1024 and desktop.
+
 ## 12. Running it
 
 ```bash

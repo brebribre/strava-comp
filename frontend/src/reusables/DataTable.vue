@@ -1,4 +1,4 @@
-<script setup lang="ts" generic="T extends Record<string, unknown>">
+<script setup lang="ts" generic="T extends object">
 export interface Column {
   key: string
   label: string
@@ -6,6 +6,12 @@ export interface Column {
 }
 
 defineProps<{ columns: Column[]; rows: T[]; rowKey: keyof T }>()
+
+// Columns are addressed by string key, which a typed row object can't be indexed with
+// directly. Narrowing here keeps callers free of index signatures on their models.
+function cell(row: T, key: string): unknown {
+  return (row as Record<string, unknown>)[key]
+}
 </script>
 
 <template>
@@ -39,7 +45,7 @@ defineProps<{ columns: Column[]; rows: T[]; rowKey: keyof T }>()
               column.align === 'right' ? 'text-right tabular-nums' : 'text-left',
             ]"
           >
-            <slot :name="column.key" :row="row">{{ row[column.key] }}</slot>
+            <slot :name="column.key" :row="row">{{ cell(row, column.key) }}</slot>
           </td>
         </tr>
       </tbody>

@@ -6,19 +6,22 @@ import { useActivitySync } from '@/hooks/useActivitySync'
 import { useFormat } from '@/hooks/useFormat'
 import { useGroupSummary, WINDOW_OPTIONS } from '@/hooks/useGroupSummary'
 import { TREND_METRICS, useGroupTrend } from '@/hooks/useGroupTrend'
+import { useSportColors } from '@/hooks/useSportColors'
 import AppAlert from '@/reusables/AppAlert.vue'
 import AppButton from '@/reusables/AppButton.vue'
 import AppCard from '@/reusables/AppCard.vue'
 import BarChart from '@/reusables/BarChart.vue'
+import FilterChip from '@/reusables/FilterChip.vue'
 import DataTable, { type Column } from '@/reusables/DataTable.vue'
 import EmptyState from '@/reusables/EmptyState.vue'
 
 const route = useRoute()
 const groupId = () => Number(route.params.id)
 
-const { summary, members, days, isLoading, error, refresh } = useGroupSummary(groupId)
+const { members, days, isLoading, error, refresh } = useGroupSummary(groupId)
 const trend = useGroupTrend(groupId, () => days.value)
 const { sync, isSyncing, lastResult } = useActivitySync()
+const { colorFor } = useSportColors()
 const { km, duration, elevation, heartrate } = useFormat()
 
 const columns: Column[] = [
@@ -42,7 +45,7 @@ async function handleSync() {
 
 <template>
   <div class="mx-auto max-w-5xl space-y-6">
-    <header class="flex flex-wrap items-center justify-end gap-2">
+    <header class="flex flex-wrap items-center gap-2 sm:justify-end">
       <AppButton
         v-for="option in WINDOW_OPTIONS"
         :key="option"
@@ -67,7 +70,7 @@ async function handleSync() {
       <DataTable v-else :columns="columns" :rows="members" row-key="athlete_id">
         <template #name="{ row }">
           <span class="font-medium">{{ row.name }}</span>
-          <span v-if="row.by_sport.length" class="ml-2 text-xs text-slate-400">
+          <span v-if="row.by_sport.length" class="ml-2 hidden text-xs text-slate-400 sm:inline">
             {{ row.by_sport.map((s: any) => s.sport_type).join(', ') }}
           </span>
         </template>
@@ -92,11 +95,51 @@ async function handleSync() {
         </div>
       </template>
 
+      <!-- Filters apply to both metrics: an empty selection means "everything". -->
+      <div class="mb-4 space-y-2">
+        <div v-if="trend.availableSports.value.length > 1" class="flex flex-wrap items-center gap-2">
+          <span class="w-16 shrink-0 text-xs text-slate-400">Sport</span>
+          <FilterChip
+            v-for="sport in trend.availableSports.value"
+            :key="sport"
+            :label="sport"
+            :color="colorFor(sport)"
+            :active="trend.sportFilter.value.has(sport)"
+            @toggle="trend.toggleSport(sport)"
+          />
+        </div>
+
+        <div v-if="trend.availableAthletes.value.length > 1" class="flex flex-wrap items-center gap-2">
+          <span class="w-16 shrink-0 text-xs text-slate-400">Athlete</span>
+          <FilterChip
+            v-for="person in trend.availableAthletes.value"
+            :key="person.id"
+            :label="person.name"
+            :active="trend.athleteFilter.value.has(person.id)"
+            @toggle="trend.toggleAthlete(person.id)"
+          />
+          <button
+            v-if="trend.hasFilters.value"
+            type="button"
+            class="text-xs text-slate-400 underline hover:text-slate-600 dark:hover:text-slate-200"
+            @click="trend.clearFilters()"
+          >
+            Clear
+          </button>
+        </div>
+      </div>
+
       <p v-if="trend.isLoading.value" class="text-sm text-slate-400">Loading…</p>
       <EmptyState
         v-else-if="!trend.hasData.value"
-        title="Nothing logged in this window"
-        :hint="hasAnyActivity ? 'Try a longer window.' : 'Activities appear here as they sync from Strava.'"
+        :title="trend.hasFilters.value ? 'Nothing matches these filters' : 'Nothing logged in this window'"
+        :hint="
+          trend.hasFilters.value
+            ? 'Try clearing a filter or widening the window.'
+            : hasAnyActivity
+              ? 'Try a longer window.'
+              : 'Activities appear here as they sync from Strava.'
+        "
       />
       <BarChart v-else :data="trend.chartData.value" :options="trend.chartOptions.value" />
     </AppCard>

@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { useAuth } from '@/hooks/useAuth'
 import { useFormat } from '@/hooks/useFormat'
 import { useGroupTarget } from '@/hooks/useGroupTarget'
+import { useViewport } from '@/hooks/useViewport'
 import AppAlert from '@/reusables/AppAlert.vue'
 import AppButton from '@/reusables/AppButton.vue'
 import AppCard from '@/reusables/AppCard.vue'
@@ -21,6 +23,8 @@ const { progress, me, others, hasTarget, headline, periodLabel, isLoading, error
   () => athlete.value?.athlete_id,
 )
 const { utcDate } = useFormat()
+const { isMobile } = useViewport()
+const ringSize = computed(() => (isMobile.value ? 160 : 200))
 
 const columns: Column[] = [
   { key: 'name', label: 'Athlete' },
@@ -55,7 +59,7 @@ function openSettings() {
       <!-- The big view: where the logged-in athlete stands right now. -->
       <AppCard>
         <div class="flex flex-col items-center gap-6 py-4 sm:flex-row sm:justify-center sm:gap-12">
-          <ProgressRing :percent="me.percent" :complete="me.is_complete" :size="200">
+          <ProgressRing :percent="me.percent" :complete="me.is_complete" :size="ringSize">
             <span class="text-4xl font-bold tabular-nums text-slate-900 dark:text-slate-100">
               {{ me.completed }}<span class="text-slate-400">/{{ progress.target.count }}</span>
             </span>
@@ -112,7 +116,7 @@ function openSettings() {
           </template>
           <template #percent="{ row }">
             <div class="flex items-center gap-3">
-              <ProgressBar :percent="row.percent" :complete="row.is_complete" class="w-32" />
+              <ProgressBar :percent="row.percent" :complete="row.is_complete" class="w-16 sm:w-32" />
               <span class="w-12 text-right text-xs tabular-nums text-slate-500">
                 {{ Math.round(row.percent) }}%
               </span>

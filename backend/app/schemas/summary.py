@@ -37,11 +37,21 @@ class GroupSummary(BaseModel):
     members: list[MemberSummary]
 
 
+class SportBucket(BaseModel):
+    """One sport's slice of a week — what the stacked chart draws."""
+
+    sport_type: str
+    activity_count: int
+    total_distance: float
+    total_moving_time: int
+
+
 class TrendPoint(BaseModel):
     week_start: datetime
     activity_count: int
     total_distance: float
     total_moving_time: int
+    by_sport: list[SportBucket]
 
 
 class MemberTrend(BaseModel):

@@ -1,5 +1,7 @@
 <script setup lang="ts">
-defineProps<{ to: { name: string; params?: Record<string, unknown> }; label: string }>()
+import type { RouteLocationRaw } from 'vue-router'
+
+defineProps<{ to: RouteLocationRaw; label: string }>()
 </script>
 
 <template>

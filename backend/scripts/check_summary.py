@@ -148,6 +148,19 @@ def main() -> None:
         check("inactive member has no weeks", trend[BOB_ID]["weeks"] == [])
         total = sum(w["activity_count"] for w in trend[ALICE_ID]["weeks"])
         check("weekly counts sum to the window total", total == 3, str(total))
+        alice_weeks = trend[ALICE_ID]["weeks"]
+        check("weeks carry a per-sport breakdown", all("by_sport" in w for w in alice_weeks))
+        check(
+            "per-sport counts sum to the week total",
+            all(sum(b["activity_count"] for b in w["by_sport"]) == w["activity_count"] for w in alice_weeks),
+            str(alice_weeks),
+        )
+        sports_seen = {b["sport_type"] for w in alice_weeks for b in w["by_sport"]}
+        check("both sports present in the breakdown", sports_seen == {"Run", "Ride"}, str(sports_seen))
+        check(
+            "per-sport moving time sums to the week total",
+            all(sum(b["total_moving_time"] for b in w["by_sport"]) == w["total_moving_time"] for w in alice_weeks),
+        )
         check("weeks are chronological",
               [w["week_start"] for w in trend[ALICE_ID]["weeks"]]
               == sorted(w["week_start"] for w in trend[ALICE_ID]["weeks"]))

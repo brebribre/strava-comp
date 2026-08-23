@@ -286,6 +286,9 @@ Still pending: registering the push subscription against the deployed URL)*
 2b. Added beyond the plan: `GET /groups/{group_id}/feed?limit=&before=` — every member's
    activities newest-first, for the Strava-style group feed. Cursor-paginated on `start_date`
    rather than offset, so activities arriving mid-scroll can't duplicate or skip rows.
+2a. `GET /groups/{group_id}/trend` weeks carry a **`by_sport` breakdown**, so the chart can
+   stack by activity type. Per-sport counts and times always sum to the week's totals.
+
 2b-i. Feed items also carry `polyline` (Strava's `summary_polyline`, not the full-resolution
    one — the card only draws a thumbnail) and `photo_url`, so every card can show a visual.
 
@@ -405,9 +408,16 @@ table, chart, avatar, stat row, tab link, empty state); hooks (`useAuth`, `useGr
 `useGroupFeed`, `useGroupSummary`, `useGroupTrend`, `useActivitySync`, `useFormat`,
 `useLoginError`); API hooks (`useAuthApi`, `useGroupApi`, `useActivityApi`).
 
-The group page has two tabs: **Feed** (Strava-style timeline — every member's activities grouped
-by day, with avatars, sport badges and per-sport stats) and **Summary** (totals table plus a
-week-by-week comparison chart, toggleable between moving time and activity count).
+The group page has tabs: **Feed** (Strava-style timeline — every member's activities grouped by
+day, with avatars, sport badges and per-sport stats), **Summary**, **Target** and **Settings**.
+
+The Summary chart has two shapes, because the two questions are different:
+- **Moving time** — one series per member, side by side, for comparing people.
+- **Activities** — **stacked by sport**, colour-coded, for seeing what the training was made of.
+
+Both are filterable by **sport** and by **athlete** (chips; empty selection means everything).
+Sport colours are fixed per sport in `useSportColors`, so a sport looks the same in every chart;
+unknown sports hash into a fallback palette rather than colliding on first-seen order.
 
 ✅ **Checkpoint:** End-to-end flow works locally — login → create/join group → see everyone's data.
 *(verified in-browser against the real local backend: guard redirects to /login when logged out,
@@ -415,6 +425,21 @@ sidebar + group list render real groups, dashboard shows real totals per member 
 members at zero, window switcher refetches `?days=`, Chart.js renders weekly moving time.
 Not yet verified: `Connect with Strava` locally — Strava's single callback domain points at
 Railway, so OAuth is only exercisable in production.)*
+
+---
+
+## Phase 9b: Mobile ✅ DONE
+
+The fixed 256px sidebar took two-thirds of a 375px screen, leaving content clipped off-canvas.
+Below `lg` it is now an off-canvas drawer (backdrop, close button, auto-closes on navigation);
+from `lg` up it is unchanged. Tabs scroll horizontally, action rows stack, wide tables scroll
+inside their own container, and the progress ring shrinks on phones.
+
+Rules are written down in [frontend/REQUIREMENTS.md](frontend/REQUIREMENTS.md) §11b.
+
+✅ **Checkpoint:** every screen usable on a phone.
+*(verified at 375×812, 768×1024 and desktop: feed, summary, target, settings, manage groups,
+activity detail, login. No horizontal page overflow on any of them.)*
 
 ---
 
