@@ -256,6 +256,7 @@ silently dropped.
 | `/groups/:id/feed` | `SidebarView` → `GroupView` | `SidebarContainer` + `GroupHeaderContainer` + `GroupFeedContainer` |
 | `/groups/:id/summary` | `SidebarView` → `GroupView` | `SidebarContainer` + `GroupHeaderContainer` + `GroupSummaryContainer` |
 | `/groups/:id/target` | `SidebarView` → `GroupView` | `SidebarContainer` + `GroupHeaderContainer` + `GroupTargetContainer` |
+| `/groups/:id/members` | `SidebarView` → `GroupView` | `SidebarContainer` + `GroupHeaderContainer` + `GroupMembersContainer` |
 | `/groups/:id/settings` | `SidebarView` → `GroupView` | `SidebarContainer` + `GroupHeaderContainer` + `GroupSettingsContainer` |
 | `/groups/:id/activities/:activityId` | `SidebarView` → `GroupView` | `SidebarContainer` + `GroupHeaderContainer` + `ActivityDetailContainer` |
 

@@ -46,6 +46,11 @@ const router = createRouter({
               component: () => import('@/containers/GroupSummaryContainer.vue'),
             },
             {
+              path: 'members',
+              name: 'group-members',
+              component: () => import('@/containers/GroupMembersContainer.vue'),
+            },
+            {
               path: 'target',
               name: 'group-target',
               component: () => import('@/containers/GroupTargetContainer.vue'),

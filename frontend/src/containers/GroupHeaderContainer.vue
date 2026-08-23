@@ -29,6 +29,7 @@ const { copy, copied } = useInviteLink(() => group.value?.invite_code)
       <TabLink :to="{ name: 'group-feed', params: { id: route.params.id } }" label="Feed" />
       <TabLink :to="{ name: 'group-summary', params: { id: route.params.id } }" label="Summary" />
       <TabLink :to="{ name: 'group-target', params: { id: route.params.id } }" label="Target" />
+      <TabLink :to="{ name: 'group-members', params: { id: route.params.id } }" label="Members" />
       <TabLink :to="{ name: 'group-settings', params: { id: route.params.id } }" label="Settings" />
     </nav>
   </header>
