@@ -7,6 +7,7 @@ import { useInviteLink } from '@/hooks/useInviteLink'
 import AppAlert from '@/reusables/AppAlert.vue'
 import AppButton from '@/reusables/AppButton.vue'
 import AppCard from '@/reusables/AppCard.vue'
+import SportLoader from '@/reusables/SportLoader.vue'
 import AppInput from '@/reusables/AppInput.vue'
 import EmptyState from '@/reusables/EmptyState.vue'
 
@@ -78,7 +79,7 @@ async function handleJoin() {
     </div>
 
     <AppCard title="Your groups">
-      <p v-if="isLoading" class="text-sm text-ink-subtle">Loading…</p>
+      <SportLoader v-if="isLoading" :size="36" />
       <EmptyState
         v-else-if="!groups.length"
         title="You're not in any groups yet"

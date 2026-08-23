@@ -7,6 +7,7 @@ import { useGroupTarget } from '@/hooks/useGroupTarget'
 import AppAlert from '@/reusables/AppAlert.vue'
 import AppButton from '@/reusables/AppButton.vue'
 import AppCard from '@/reusables/AppCard.vue'
+import SportLoader from '@/reusables/SportLoader.vue'
 import TargetHeroContainer from '@/containers/TargetHeroContainer.vue'
 import DataTable, { type Column } from '@/reusables/DataTable.vue'
 import EmptyState from '@/reusables/EmptyState.vue'
@@ -37,7 +38,7 @@ function openSettings() {
 <template>
   <div class="space-y-6">
     <AppAlert v-if="error" tone="error">{{ error }}</AppAlert>
-    <p v-else-if="isLoading" class="py-10 text-center text-sm text-ink-subtle">Loading target…</p>
+    <SportLoader v-else-if="isLoading" label="Loading target…" />
 
     <EmptyState
       v-else-if="!hasTarget"

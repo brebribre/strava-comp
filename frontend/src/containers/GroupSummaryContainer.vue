@@ -10,6 +10,7 @@ import { useSportColors } from '@/hooks/useSportColors'
 import AppAlert from '@/reusables/AppAlert.vue'
 import AppButton from '@/reusables/AppButton.vue'
 import AppCard from '@/reusables/AppCard.vue'
+import SportLoader from '@/reusables/SportLoader.vue'
 import BarChart from '@/reusables/BarChart.vue'
 import FilterChip from '@/reusables/FilterChip.vue'
 import DataTable, { type Column } from '@/reusables/DataTable.vue'
@@ -61,7 +62,7 @@ async function handleSync() {
     <AppAlert v-else-if="lastResult" tone="success">{{ lastResult }}</AppAlert>
 
     <AppCard title="Totals">
-      <p v-if="isLoading" class="text-sm text-ink-subtle">Loading…</p>
+      <SportLoader v-if="isLoading" :size="36" />
       <EmptyState
         v-else-if="!members.length"
         title="No members yet"
@@ -129,7 +130,7 @@ async function handleSync() {
         </div>
       </div>
 
-      <p v-if="trend.isLoading.value" class="text-sm text-ink-subtle">Loading…</p>
+      <SportLoader v-if="trend.isLoading.value" :size="36" />
       <EmptyState
         v-else-if="!trend.hasData.value"
         :title="trend.hasFilters.value ? 'Nothing matches these filters' : 'Nothing logged in this window'"

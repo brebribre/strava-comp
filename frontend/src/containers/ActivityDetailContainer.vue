@@ -7,6 +7,7 @@ import AppAlert from '@/reusables/AppAlert.vue'
 import AppAvatar from '@/reusables/AppAvatar.vue'
 import AppButton from '@/reusables/AppButton.vue'
 import AppCard from '@/reusables/AppCard.vue'
+import SportLoader from '@/reusables/SportLoader.vue'
 import DataTable, { type Column } from '@/reusables/DataTable.vue'
 import RouteMap from '@/reusables/RouteMap.vue'
 import StatRow from '@/reusables/StatRow.vue'
@@ -61,7 +62,7 @@ function goBack() {
     <AppButton variant="ghost" @click="goBack">← Back to feed</AppButton>
 
     <AppAlert v-if="error" tone="error">{{ error }}</AppAlert>
-    <p v-else-if="isLoading" class="py-10 text-center text-sm text-ink-subtle">Loading activity…</p>
+    <SportLoader v-else-if="isLoading" label="Loading activity…" />
 
     <template v-else-if="activity">
       <AppCard>

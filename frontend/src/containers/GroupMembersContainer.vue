@@ -9,6 +9,7 @@ import AppAlert from '@/reusables/AppAlert.vue'
 import AppAvatar from '@/reusables/AppAvatar.vue'
 import AppButton from '@/reusables/AppButton.vue'
 import AppCard from '@/reusables/AppCard.vue'
+import SportLoader from '@/reusables/SportLoader.vue'
 import EmptyState from '@/reusables/EmptyState.vue'
 
 const route = useRoute()
@@ -23,7 +24,7 @@ const { initials, utcDate } = useFormat()
 <template>
   <div class="mx-auto max-w-2xl space-y-4">
     <AppAlert v-if="error" tone="error">{{ error }}</AppAlert>
-    <p v-else-if="isLoading" class="py-10 text-center text-sm text-ink-subtle">Loading members…</p>
+    <SportLoader v-else-if="isLoading" label="Loading members…" />
 
     <template v-else>
       <AppCard :title="`${rows.length} member${rows.length === 1 ? '' : 's'}`">

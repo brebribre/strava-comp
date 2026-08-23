@@ -5,6 +5,7 @@ import { useTargetForm } from '@/hooks/useTargetForm'
 import AppAlert from '@/reusables/AppAlert.vue'
 import AppButton from '@/reusables/AppButton.vue'
 import AppCard from '@/reusables/AppCard.vue'
+import SportLoader from '@/reusables/SportLoader.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -29,7 +30,7 @@ async function handleSave() {
   <div class="max-w-2xl space-y-6">
     <AppAlert v-if="error" tone="error">{{ error }}</AppAlert>
     <AppAlert v-else-if="saved" tone="success">Target saved.</AppAlert>
-    <p v-if="isLoading" class="text-sm text-ink-subtle">Loading…</p>
+    <SportLoader v-if="isLoading" :size="36" />
 
     <template v-else>
       <AppCard title="Target">

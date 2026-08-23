@@ -7,6 +7,7 @@ import AppAlert from '@/reusables/AppAlert.vue'
 import AppAvatar from '@/reusables/AppAvatar.vue'
 import AppButton from '@/reusables/AppButton.vue'
 import AppCard from '@/reusables/AppCard.vue'
+import SportLoader from '@/reusables/SportLoader.vue'
 import EmptyState from '@/reusables/EmptyState.vue'
 import TargetHeroContainer from '@/containers/TargetHeroContainer.vue'
 import RouteMap from '@/reusables/RouteMap.vue'
@@ -53,7 +54,7 @@ function statsFor(item: {
 
     <AppAlert v-if="error" tone="error">{{ error }}</AppAlert>
 
-    <p v-if="isLoading" class="py-10 text-center text-sm text-ink-subtle">Loading feed…</p>
+    <SportLoader v-if="isLoading" label="Loading feed…" />
 
     <EmptyState
       v-else-if="!days.length"
