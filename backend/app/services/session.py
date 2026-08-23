@@ -32,14 +32,25 @@ def read_session_token(token: str) -> int | None:
     return athlete_id if isinstance(athlete_id, int) else None
 
 
-def create_oauth_state(nonce: str) -> str:
-    """Sign the CSRF nonce that round-trips through Strava as `state`."""
-    return _serializer(_OAUTH_STATE_SALT).dumps({"nonce": nonce})
+def create_oauth_state(nonce: str, invite_code: str | None = None) -> str:
+    """Sign the CSRF nonce that round-trips through Strava as `state`.
+
+    An invite code rides along so a logged-out visitor following an invite link is joined
+    to the group after authorizing. It's signed, so it can't be swapped for another
+    group's code en route.
+    """
+    payload: dict[str, str] = {"nonce": nonce}
+    if invite_code:
+        payload["invite"] = invite_code
+    return _serializer(_OAUTH_STATE_SALT).dumps(payload)
 
 
-def read_oauth_state(state: str, max_age_seconds: int = 600) -> str | None:
+def read_oauth_state(state: str, max_age_seconds: int = 600) -> dict[str, str] | None:
+    """Return the decoded state payload, or None if invalid/tampered/expired."""
     try:
         data = _serializer(_OAUTH_STATE_SALT).loads(state, max_age=max_age_seconds)
     except (BadSignature, SignatureExpired):
         return None
-    return data.get("nonce") if isinstance(data, dict) else None
+    if not isinstance(data, dict) or not isinstance(data.get("nonce"), str):
+        return None
+    return data

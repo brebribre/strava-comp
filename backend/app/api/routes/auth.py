@@ -9,7 +9,9 @@ from app.config import get_settings
 from app.infra.strava import StravaError, build_authorize_url
 from app.schemas.auth import AthleteMe, LogoutResponse
 from app.services import auth as auth_service
+from app.services import groups as groups_service
 from app.services.activities import backfill_in_background
+from app.services.errors import GroupNotFound
 from app.services.session import create_oauth_state, create_session_token, read_oauth_state
 
 router = APIRouter(tags=["auth"])
@@ -47,7 +49,7 @@ def _frontend_redirect(**params: str) -> RedirectResponse:
     status_code=status.HTTP_307_TEMPORARY_REDIRECT,
     responses={307: {"description": "Redirect to Strava's OAuth consent screen"}},
 )
-def strava_login() -> RedirectResponse:
+def strava_login(invite: str | None = None) -> RedirectResponse:
     if not settings.strava_client_id or not settings.strava_client_secret:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -55,7 +57,7 @@ def strava_login() -> RedirectResponse:
         )
 
     nonce = secrets.token_urlsafe(16)
-    response = RedirectResponse(url=build_authorize_url(create_oauth_state(nonce)))
+    response = RedirectResponse(url=build_authorize_url(create_oauth_state(nonce, invite)))
     response.set_cookie(
         key=_STATE_COOKIE,
         value=nonce,
@@ -96,8 +98,12 @@ def strava_callback(
 
     # CSRF: the signed state must decode, and its nonce must match our cookie.
     expected_nonce = request.cookies.get(_STATE_COOKIE)
-    nonce = read_oauth_state(state, max_age_seconds=_STATE_MAX_AGE)
-    if not expected_nonce or nonce is None or not secrets.compare_digest(nonce, expected_nonce):
+    state_payload = read_oauth_state(state, max_age_seconds=_STATE_MAX_AGE)
+    if (
+        not expected_nonce
+        or state_payload is None
+        or not secrets.compare_digest(state_payload["nonce"], expected_nonce)
+    ):
         return _frontend_redirect(error="invalid_state")
 
     # Without activity:read_all we can only see public activities — worth surfacing.
@@ -113,7 +119,19 @@ def strava_callback(
     # Pull recent history in the background so login isn't held up by Strava.
     background.add_task(backfill_in_background, athlete.athlete_id)
 
-    response = _frontend_redirect(login="ok")
+    # Followed an invite link while logged out: join them now that they have an account.
+    redirect_params = {"login": "ok"}
+    invite_code = state_payload.get("invite")
+    if invite_code:
+        try:
+            group = groups_service.join_group(session, invite_code, athlete.athlete_id)
+            redirect_params["group"] = str(group.id)
+        except GroupNotFound:
+            # Bad or expired code — they're still logged in, so say so rather than
+            # dumping them on an error page.
+            redirect_params["invite_error"] = "not_found"
+
+    response = _frontend_redirect(**redirect_params)
     _set_session_cookie(response, athlete.athlete_id)
     response.delete_cookie(_STATE_COOKIE, path="/")
     return response

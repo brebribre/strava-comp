@@ -21,3 +21,6 @@ def setup_logging(level: str = "INFO") -> None:
     for name in ("uvicorn", "uvicorn.access", "uvicorn.error"):
         logging.getLogger(name).handlers = []
         logging.getLogger(name).propagate = True
+
+    # httpx logs every outbound request at INFO — useful for Strava calls, noise everywhere else.
+    logging.getLogger("httpx").setLevel(logging.WARNING)

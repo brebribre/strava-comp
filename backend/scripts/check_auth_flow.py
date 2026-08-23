@@ -103,6 +103,16 @@ def main() -> None:
             r = client.get("/me", headers={"Cookie": f"{settings.session_cookie_name}={tampered}"})
             check("tampered cookie → 401", r.status_code == 401)
 
+            print("\ninvite link carried through OAuth")
+            r = client.get("/auth/strava/login", params={"invite": "no-such-code"})
+            invite_state = parse_qs(urlparse(r.headers["location"]).query)["state"][0]
+            r = client.get(
+                "/auth/strava/callback",
+                params={"code": "good-code", "state": invite_state, "scope": "read,activity:read_all"},
+            )
+            check("bad invite still logs the user in", "login=ok" in r.headers["location"])
+            check("bad invite reported, not fatal", "invite_error=not_found" in r.headers["location"])
+
             print("\nreturning user (upsert, not duplicate)")
             r = client.get("/auth/strava/login")
             state2 = parse_qs(urlparse(r.headers["location"]).query)["state"][0]

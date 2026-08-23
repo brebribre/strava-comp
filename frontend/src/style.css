@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+/* Tailwind v4 is CSS-first: design tokens are declared here, not in a JS config file. */
+@theme {
+  --color-strava: #fc4c02;
+  --color-strava-dark: #e34402;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+}

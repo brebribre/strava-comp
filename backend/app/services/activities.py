@@ -116,6 +116,10 @@ def backfill_in_background(athlete_id: int) -> None:
     try:
         with Session(engine) as session:
             saved = sync_athlete_activities(session, athlete_id)
+            # Imported here, not at module scope: activity_detail imports this module.
+            from app.services.activity_detail import enrich_recent
+
+            enrich_recent(session, athlete_id)
         logger.info("backfill complete for athlete %s: %s activities", athlete_id, saved)
     except ReauthorizationRequired:
         logger.warning("backfill skipped for athlete %s: needs to reconnect Strava", athlete_id)

@@ -261,7 +261,7 @@ Still pending: registering the push subscription against the deployed URL)*
 
 ---
 
-## Phase 8: Group Summary Endpoint
+## Phase 8: Group Summary Endpoint ✅ DONE
 
 **Goal:** See every member's activity summary within a specific group.
 
@@ -283,13 +283,109 @@ Still pending: registering the push subscription against the deployed URL)*
    GROUP BY a.owner_id, ath.name, act.sport_type;
    ```
 2. Optional: `GET /groups/{group_id}/trend?months=3` — same join, bucketed by week, for a comparison chart across members
+2b. Added beyond the plan: `GET /groups/{group_id}/feed?limit=&before=` — every member's
+   activities newest-first, for the Strava-style group feed. Cursor-paginated on `start_date`
+   rather than offset, so activities arriving mid-scroll can't duplicate or skip rows.
+2b-i. Feed items also carry `polyline` (Strava's `summary_polyline`, not the full-resolution
+   one — the card only draws a thumbnail) and `photo_url`, so every card can show a visual.
+
+2c. Also added: `GET /activities/{activity_id}` — full detail for one activity. The list and
+   webhook payloads are Strava `SummaryActivity` (resource_state 2), which has no description,
+   calories or splits, so the first view enriches from Strava's detailed endpoint
+   (resource_state 3) and caches it back into `raw_data`. Enrichment uses the **owner's** token,
+   never the viewer's; authorization is "owner, or shares a group with the owner". If Strava is
+   unreachable the endpoint degrades to stored data with `is_detailed: false` rather than failing.
+
+2d. `enrich_recent()` runs as a background task after every sync and backfill, upgrading up to
+   10 recent summary-only activities to detailed payloads. Without it, backfilled activities
+   would never have photos or descriptions at all. Bounded on purpose: one Strava request per
+   activity against a 200-per-15-minutes budget, and it stops early on any error rather than
+   burning what's left.
 3. **Test**: call the endpoint for your test group, confirm it returns rows for every member, not just the caller
+   ```bash
+   cd backend && .venv/bin/python -m scripts.check_summary
+   ```
+
+Implementation notes:
+- Parameter is **`?days=`** (default 30, max 365), not `?months=` — `BACKFILL_DAYS` is 7, so a
+  3-month default would mostly return empty windows.
+- Members come from `group_memberships`, not from the activity rows, so **someone who did nothing
+  still appears with zeroes** instead of vanishing from the leaderboard.
+- Response nests per-sport breakdowns inside each member, and members are sorted by moving time
+  (most active first) — the comparison the group actually wants.
+- Overall `avg_heartrate` is weighted by activity count across sports, so a single long ride
+  doesn't count the same as five runs. Activities without HR are excluded rather than counted as 0.
+- Onboarding helper: `scripts/add_member.py --list` shows athletes/groups; `add_member.py
+  <athlete_id> <invite_code>` puts a brother into a group after they log in, so they never need
+  to touch Swagger.
 
 ✅ **Checkpoint:** Backend can answer "how has everyone in this group been doing."
+*(verified: 24 checks — per-sport splits, window filtering, HR averaging and nulls, inactive
+members included, non-members excluded, ordering, days validation, weekly trend buckets,
+403/401/404 access control. Live: real summary over 6 activities in group "Alvin Brothers")*
 
 ---
 
-## Phase 9: Vue Frontend
+## Phase 5b: Invite Links ✅ DONE (added beyond the original plan)
+
+Sharing a group is a link — `https://<frontend>/join/<invite_code>` — not a code to type.
+
+- **Already logged in:** the `/join/:code` route joins immediately and lands them in the group.
+- **Not logged in:** the code is passed to `GET /auth/strava/login?invite=…`, which **signs it
+  into the OAuth `state`**. After the athlete authorizes, the callback joins them and redirects
+  to `?login=ok&group=<id>`, and the router guard sends them straight into that group.
+
+The code rides in the signed state rather than in browser storage, so it survives the trip to
+Strava even in a fresh browser, and cannot be swapped for another group's code en route —
+tampering fails the existing CSRF check.
+
+A bad code never blocks login: the athlete is logged in regardless and told the link is stale
+(`?invite_error=not_found`).
+
+Copy-link buttons live in the group header and in Manage groups (with a `document.execCommand`
+fallback for when the Clipboard API is unavailable).
+
+✅ **Checkpoint:** anyone with the link ends up in the group, account or not.
+*(verified: 12 checks — logged-out visitor joins through the full OAuth round trip, redirect
+names the group, tampered state rejected, re-joining is a no-op with no duplicate membership,
+unknown code 404. Live: logged-in join redirects to the group, bad link shows a clear message,
+logged-out visit redirects to Strava.)*
+
+---
+
+## Phase 8b: Group Targets ✅ DONE (added beyond the original plan)
+
+A group can set a shared training target: **N qualifying exercises per week / month / year,
+until a given date**, with per-sport rules for what counts as an exercise.
+
+Model: `group_targets`, keyed by `group_id` (one target per group, so saving replaces rather
+than accumulating). Rules live in a JSONB column, so adding a sport or a new kind of threshold
+needs no migration.
+
+Qualification: time is the universal fallback (`default_min_minutes`, default 30). A sport may
+add a distance threshold, and the two are **OR'd** — a short but long run still counts, which is
+what "for run it is time or range" means. Evaluated in Python rather than SQL: the rules are
+per-sport and OR'd across thresholds, which makes for an unreadable query at no benefit at this
+data size.
+
+Endpoints (all members-only):
+- `GET /groups/{id}/target`, `PUT` to set/replace, `DELETE` to remove — 404 when unset
+- `GET /groups/{id}/target/progress` — every member's count for the **current** period,
+  furthest-ahead first, with `remaining`, `percent` (capped at 100), `days_left_in_period`,
+  `periods_remaining` and `is_expired`
+
+Frontend: **Target** tab shows the logged-in athlete's standing as a big progress ring plus a
+table of everyone else; **Settings** tab (also reachable from Manage groups) edits the target.
+
+✅ **Checkpoint:** targets are stored, enforced consistently, and visible per member.
+*(verified: 45 checks — qualification incl. time-or-distance, exactly-at-threshold, unknown
+sports, null sport_type; period maths incl. leap February and December rollover; replace-not-
+duplicate; over-achievement clamping; expiry; 403/401 access control; delete. Live: set 4/week
+via the UI, edited to 6/week, ring and table updated.)*
+
+---
+
+## Phase 9: Vue Frontend ✅ DONE (local) — not yet deployed
 
 1. Scaffold Vue app: `npm create vue@latest`
 2. Build core pages:
@@ -299,7 +395,26 @@ Still pending: registering the push subscription against the deployed URL)*
 3. Handle auth state: `credentials: 'include'` on all requests; configure CORS on FastAPI to allow the frontend origin with credentials
 4. **Test locally**: log in, create a group, join it with a second account, confirm the group dashboard shows both members correctly
 
+Architecture is specified in [frontend/REQUIREMENTS.md](frontend/REQUIREMENTS.md) — Vite + Vue 3 +
+TypeScript + Tailwind 4, layered `View → Container → Hook → API hook → fetch`, Pinia for shared
+state, router guard for auth, Chart.js for the trend chart.
+
+Built: `LoginView`, `SidebarView`, `GroupView` (nested tabs); containers `Login`, `Sidebar`,
+`GroupList`, `GroupHeader`, `GroupFeed`, `GroupSummary`; reusables (button, input, card, alert,
+table, chart, avatar, stat row, tab link, empty state); hooks (`useAuth`, `useGroup`, `useGroups`,
+`useGroupFeed`, `useGroupSummary`, `useGroupTrend`, `useActivitySync`, `useFormat`,
+`useLoginError`); API hooks (`useAuthApi`, `useGroupApi`, `useActivityApi`).
+
+The group page has two tabs: **Feed** (Strava-style timeline — every member's activities grouped
+by day, with avatars, sport badges and per-sport stats) and **Summary** (totals table plus a
+week-by-week comparison chart, toggleable between moving time and activity count).
+
 ✅ **Checkpoint:** End-to-end flow works locally — login → create/join group → see everyone's data.
+*(verified in-browser against the real local backend: guard redirects to /login when logged out,
+sidebar + group list render real groups, dashboard shows real totals per member with inactive
+members at zero, window switcher refetches `?days=`, Chart.js renders weekly moving time.
+Not yet verified: `Connect with Strava` locally — Strava's single callback domain points at
+Railway, so OAuth is only exercisable in production.)*
 
 ---
 
