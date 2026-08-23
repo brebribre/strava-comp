@@ -8,6 +8,8 @@ import type {
   Target,
   TargetProgress,
   TargetWrite,
+  TelegramSettings,
+  TelegramTestResult,
 } from '@/types/api'
 
 export function useGroupApi() {
@@ -26,6 +28,11 @@ export function useGroupApi() {
     deleteTarget: (groupId: number) => request<void>('DELETE', `/groups/${groupId}/target`),
     targetProgress: (groupId: number) =>
       request<TargetProgress>('GET', `/groups/${groupId}/target/progress`),
+    telegram: (groupId: number) => request<TelegramSettings>('GET', `/groups/${groupId}/telegram`),
+    saveTelegram: (groupId: number, chatId: number | null) =>
+      request<TelegramSettings>('PUT', `/groups/${groupId}/telegram`, { telegram_chat_id: chatId }),
+    testTelegram: (groupId: number) =>
+      request<TelegramTestResult>('POST', `/groups/${groupId}/telegram/test`),
     feed: (groupId: number, limit: number, before?: string | null) =>
       request<GroupFeed>(
         'GET',

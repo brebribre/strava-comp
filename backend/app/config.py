@@ -35,6 +35,9 @@ class Settings(BaseSettings):
 
     log_level: str = "INFO"
 
+    # From @BotFather. Empty disables Telegram notifications entirely.
+    telegram_bot_token: str = ""
+
     frontend_origin: str = "http://localhost:5173"
     # Comma-separated extra origins allowed by CORS, e.g. a Railway preview URL.
     extra_cors_origins: str = ""

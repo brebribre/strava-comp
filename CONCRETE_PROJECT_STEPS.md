@@ -493,7 +493,40 @@ inverting per theme.)*
 
 ---
 
-## Phase 12 (Later): Notifications
+## Phase 12: Notifications ✅ DONE (Telegram)
+
+WhatsApp was ruled out: Meta's Groups API only works with groups **the business creates via
+the API** (invite-only, max 8 participants, Official Business Account required) — there is no
+way to post into an existing personal group. Telegram has none of those limits.
+
+Setup: bot `@BruderBandeBot` via @BotFather; `TELEGRAM_BOT_TOKEN` on the backend; each
+Bruderbande group stores one `telegram_chat_id`.
+
+How it works: the webhook stores the activity, then announces it to every group the athlete
+belongs to that has a chat connected **and** whose target rules the activity satisfies (no
+target ⇒ everything qualifies). The message is a server-rendered PNG card captioned
+"*Name* just did *Activity*!".
+
+Implementation notes:
+- The card is rendered **twice** — canvas in the browser for in-app sharing, Pillow on the
+  server for notifications, since a webhook has no browser. `app/services/share_card.py` and
+  `useShareCard.ts` must be kept in step when restyling.
+- Inter is vendored as a variable font (`app/assets/fonts/Inter.ttf`, OFL) — Pillow needs a
+  real TTF and system fonts can't be relied on in a container.
+- A `(activity_id, group_id)` row is **claimed before sending**, because Strava fires `create`
+  and often `update` for the same activity; the claim is released if the send fails so a retry
+  can still work.
+- Settings live in a new `group_integrations` table rather than a column on `groups`, because
+  `SQLModel.create_all` creates new tables but never alters existing ones — a new column would
+  exist locally and be silently missing in production.
+
+✅ **Checkpoint:** finishing a qualifying activity posts a card to the group's Telegram chat.
+*(verified: 17 checks with the API stubbed — qualification, dedupe, failure/retry, access
+control — plus a real card posted to the "JJB" group.)*
+
+---
+
+## Phase 12 (original plan): Notifications
 
 Deferred — WhatsApp real groups aren't viable at this scale (Meta requires 100k+ conversations/day). When ready:
 - [ ] Decide: individual WhatsApp DMs (360dialog/Twilio) vs. Telegram/Discord bot with a real group

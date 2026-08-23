@@ -7,6 +7,15 @@ Every model must be imported here so SQLModel.metadata sees it at table-create t
 from app.models.activity import Activity
 from app.models.athlete import Athlete
 from app.models.group import Group, GroupMembership
+from app.models.integration import ActivityNotification, GroupIntegration
 from app.models.target import GroupTarget
 
-__all__ = ["Activity", "Athlete", "Group", "GroupMembership", "GroupTarget"]
+__all__ = [
+    "Activity",
+    "ActivityNotification",
+    "Athlete",
+    "Group",
+    "GroupIntegration",
+    "GroupMembership",
+    "GroupTarget",
+]

@@ -2,6 +2,7 @@
 import { useRoute, useRouter } from 'vue-router'
 
 import { useTargetForm } from '@/hooks/useTargetForm'
+import { useTelegramSettings } from '@/hooks/useTelegramSettings'
 import AppAlert from '@/reusables/AppAlert.vue'
 import AppButton from '@/reusables/AppButton.vue'
 import AppCard from '@/reusables/AppCard.vue'
@@ -9,9 +10,9 @@ import SportLoader from '@/reusables/SportLoader.vue'
 
 const route = useRoute()
 const router = useRouter()
-const { form, exists, isLoading, isSaving, saved, error, save, remove } = useTargetForm(
-  () => Number(route.params.id),
-)
+const groupId = () => Number(route.params.id)
+const { form, exists, isLoading, isSaving, saved, error, save, remove } = useTargetForm(groupId)
+const telegram = useTelegramSettings(groupId)
 
 const periods = [
   { value: 'week', label: 'Week' },
@@ -156,6 +157,47 @@ async function handleSave() {
           Remove target
         </AppButton>
       </div>
+
+      <AppCard title="Telegram notifications">
+        <AppAlert v-if="telegram.error.value" tone="error" class="mb-3">
+          {{ telegram.error.value }}
+        </AppAlert>
+        <AppAlert v-else-if="telegram.notice.value" tone="success" class="mb-3">
+          {{ telegram.notice.value }}
+        </AppAlert>
+
+        <p class="mb-4 text-sm text-ink-muted">
+          Post every qualifying activity to a Telegram group.
+          <template v-if="telegram.botUsername.value">
+            Add
+            <code class="rounded-sm bg-raised px-1 py-0.5">@{{ telegram.botUsername.value }}</code>
+            to the chat, send a message there, then open
+            <code class="rounded-sm bg-raised px-1 py-0.5">getUpdates</code> to find the chat id.
+          </template>
+        </p>
+
+        <div class="flex flex-wrap items-end gap-3">
+          <label class="block">
+            <span class="mb-1.5 block text-xs font-medium text-ink-muted">Chat id</span>
+            <input
+              v-model="telegram.chatId.value"
+              inputmode="numeric"
+              placeholder="-1001234567890"
+              class="w-56 rounded-md border border-line bg-surface px-3 py-2 text-sm text-ink outline-none placeholder:text-ink-subtle transition-colors duration-(--duration-quick) focus:border-ink"
+            />
+          </label>
+          <AppButton :loading="telegram.isSaving.value" @click="telegram.save()">Save</AppButton>
+          <AppButton
+            variant="secondary"
+            :disabled="!telegram.isConfigured.value"
+            :loading="telegram.isTesting.value"
+            @click="telegram.sendTest()"
+          >
+            Send test message
+          </AppButton>
+        </div>
+        <p class="mt-2 text-xs text-ink-subtle">Leave empty and save to turn notifications off.</p>
+      </AppCard>
     </template>
   </div>
 </template>

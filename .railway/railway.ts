@@ -31,6 +31,7 @@ export default defineRailway(() => {
       STRAVA_CLIENT_SECRET: preserve(),
       SECRET_KEY: preserve(),
       STRAVA_VERIFY_TOKEN: preserve(),
+      TELEGRAM_BOT_TOKEN: preserve(),
       STRAVA_REDIRECT_URI: preserve(),
       FRONTEND_ORIGIN: preserve(),
     },

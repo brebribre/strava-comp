@@ -182,3 +182,14 @@ export interface TargetProgress {
   is_expired: boolean
   members: MemberProgress[]
 }
+
+export interface TelegramSettings {
+  telegram_chat_id: number | null
+  is_configured: boolean
+  bot_username: string | null
+}
+
+export interface TelegramTestResult {
+  sent: boolean
+  detail: string
+}

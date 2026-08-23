@@ -14,6 +14,7 @@ from app.infra.db import engine
 from app.models import Activity, Athlete
 from app.services.activities import save_activities_to_db
 from app.services.errors import ReauthorizationRequired
+from app.services.notifications import announce_activity
 from app.services.tokens import get_valid_access_token
 
 logger = logging.getLogger(__name__)
@@ -24,6 +25,12 @@ def _handle_activity_upsert(session: Session, owner_id: int, activity_id: int) -
     payload = strava.fetch_activity(access_token, activity_id)
     save_activities_to_db(session, owner_id, [payload])
     logger.info("webhook: stored activity %s for athlete %s", activity_id, owner_id)
+
+    # Announce after storing, and never let a notification failure lose the activity.
+    try:
+        announce_activity(session, activity_id)
+    except Exception:  # noqa: BLE001
+        logger.exception("webhook: announcing activity %s failed", activity_id)
 
 
 def _handle_activity_delete(session: Session, owner_id: int, activity_id: int) -> None:
