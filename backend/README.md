@@ -12,10 +12,11 @@ app/
   api/           HTTP layer — the only layer that knows about FastAPI
     router.py      aggregates every route module
     deps.py        shared dependencies (get_db; later get_current_athlete, require_group_member)
-    routes/        one module per resource: health.py, later auth.py, groups.py, webhooks.py
+    routes/        one module per resource: health.py, auth.py, later groups.py, webhooks.py
 
   services/      business logic — takes a Session + plain args, returns plain data
                  raises domain errors; routes translate them to HTTP
+                 auth.py (login/upsert), session.py (signed cookies + OAuth state)
 
   infra/         outbound connections
     db.py          engine, session, table creation
@@ -50,6 +51,12 @@ cd backend && uv venv && uv pip install -r requirements.txt
 
 ```bash
 cd backend && .venv/bin/uvicorn app.main:app --reload
+```
+
+## Checks
+
+```bash
+cd backend && .venv/bin/python -m scripts.check_schema_roundtrip && .venv/bin/python -m scripts.check_auth_flow
 ```
 
 Docs at http://localhost:8000/docs — `/` redirects there. `/health` returns 200 only

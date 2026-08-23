@@ -68,9 +68,14 @@ supply them ourselves. All timestamps are `TIMESTAMPTZ`. `groups.created_by` is
 
 ---
 
-## Phase 3: Strava OAuth (Login) Flow
+## Phase 3: Strava OAuth (Login) Flow ✅ DONE
 
 **Goal:** Clicking "Connect with Strava" logs a user in and stores their tokens.
+
+Built beyond the plan: a signed `state` nonce (CSRF), a scope check that rejects a grant
+without `activity:read_all`, `POST /auth/logout`, and error redirects back to the frontend
+with an `?error=` param instead of raw 500s. **Before the manual test**, set the Strava app's
+*Authorization Callback Domain* to `localhost`.
 
 1. Build the authorize redirect endpoint:
    ```
@@ -86,9 +91,17 @@ supply them ourselves. All timestamps are `TIMESTAMPTZ`. `groups.created_by` is
    ```
 3. Build `get_current_athlete` dependency that reads/validates the session cookie
 4. Build a protected test endpoint `GET /me` returning the logged-in athlete's ID
-5. **Test manually**: visit the authorize URL, log in with your own Strava account, confirm `/me` works and a row appears in `athletes`
+5. **Test manually**: visit http://localhost:8000/auth/strava/login, log in with your own
+   Strava account, confirm `/me` works and a row appears in `athletes`
+   — everything *except* the consent screen is covered by `backend/scripts/check_auth_flow.py`
+   (Strava's token endpoint stubbed):
+   ```bash
+   cd backend && .venv/bin/python -m scripts.check_auth_flow
+   ```
 
 ✅ **Checkpoint:** You can log in via Strava and get a working session.
+*(automated: authorize redirect, CSRF state, scope enforcement, upsert, cookie, /me, logout.
+Manual: real login confirmed — athlete row written with both tokens, `/me` returned it)*
 
 ---
 
