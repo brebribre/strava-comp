@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router'
 
+import { ref } from 'vue'
+
 import { useActivityDetail } from '@/hooks/useActivityDetail'
+import { useShareCard } from '@/hooks/useShareCard'
 import { useFormat } from '@/hooks/useFormat'
 import AppAlert from '@/reusables/AppAlert.vue'
 import AppAvatar from '@/reusables/AppAvatar.vue'
@@ -9,6 +12,7 @@ import AppButton from '@/reusables/AppButton.vue'
 import AppCard from '@/reusables/AppCard.vue'
 import SportLoader from '@/reusables/SportLoader.vue'
 import DataTable, { type Column } from '@/reusables/DataTable.vue'
+import AppModal from '@/reusables/AppModal.vue'
 import RouteMap from '@/reusables/RouteMap.vue'
 import StatRow from '@/reusables/StatRow.vue'
 
@@ -52,6 +56,20 @@ function stats() {
   return result
 }
 
+const shareCard = useShareCard()
+const isShareOpen = ref(false)
+
+async function openShare() {
+  if (!activity.value) return
+  isShareOpen.value = true
+  await shareCard.preview(activity.value)
+}
+
+function closeShare() {
+  isShareOpen.value = false
+  shareCard.clear()
+}
+
 function goBack() {
   router.push({ name: 'group-feed', params: { id: route.params.id } })
 }
@@ -59,7 +77,10 @@ function goBack() {
 
 <template>
   <div class="mx-auto max-w-2xl space-y-4">
-    <AppButton variant="ghost" @click="goBack">← Back to feed</AppButton>
+    <div class="flex items-center justify-between gap-2">
+      <AppButton variant="ghost" @click="goBack">← Back to feed</AppButton>
+      <AppButton v-if="activity" variant="secondary" @click="openShare">Share</AppButton>
+    </div>
 
     <AppAlert v-if="error" tone="error">{{ error }}</AppAlert>
     <SportLoader v-else-if="isLoading" label="Loading activity…" class="py-12" />
@@ -122,5 +143,30 @@ function goBack() {
         </DataTable>
       </AppCard>
     </template>
+
+    <AppModal v-if="isShareOpen && activity" title="Share this activity" @close="closeShare">
+      <SportLoader v-if="shareCard.isWorking.value" :size="36" class="py-8" />
+      <AppAlert v-else-if="shareCard.error.value" tone="error">
+        {{ shareCard.error.value }}
+      </AppAlert>
+      <template v-else-if="shareCard.previewUrl.value">
+        <img
+          :src="shareCard.previewUrl.value"
+          alt="Shareable summary of this activity"
+          class="w-full rounded-md border border-line"
+        />
+        <div class="mt-4 flex flex-wrap gap-2">
+          <AppButton
+            v-if="shareCard.canShareFiles(activity)"
+            @click="shareCard.share(activity)"
+          >
+            Share…
+          </AppButton>
+          <AppButton variant="secondary" @click="shareCard.download(activity)">
+            Save image
+          </AppButton>
+        </div>
+      </template>
+    </AppModal>
   </div>
 </template>

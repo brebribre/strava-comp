@@ -341,6 +341,24 @@ palette in JS: a **tonal ramp** (dark→light, inverted for dark mode) assigned 
 the sorted sport list, never hashed — hashing would drop adjacent stack segments onto
 near-identical greys. Axis, grid and legend colours are passed explicitly per theme.
 
+## 11c. Share cards
+
+An activity can be exported as a **1080×1350 PNG** — the 4:5 portrait shape chat apps and
+stories show without cropping. Rendered with `useShareCard`:
+
+- **Always dark**, regardless of the viewer's theme. The image ends up in other people's
+  chats, where it should look deliberate rather than inherit whatever mode the sender had on.
+- Contents: profile row (initials avatar, athlete name, date/time), the **sport icon**, sport
+  label, activity title (wrapped to two lines, ellipsised), a two-column stat grid of up to six
+  metrics, and a `bruderbande.com` footer.
+- Drawn with the **Canvas 2D API and `Path2D`**, reusing the same icon path data as
+  `SportLoader` (`useSportIcon`) — no screenshot library, no extra dependency.
+- Sharing prefers the **Web Share API with a file**, which opens the OS share sheet and can
+  hand the image straight to WhatsApp. Where that isn't supported (most desktop browsers) the
+  button falls back to a download, decided by `navigator.canShare` rather than by guessing
+  from the user agent.
+- The user sees a **preview before sending**, as on Strava.
+
 ## 11b. Responsive rules
 
 The app is used on phones as much as laptops, so **mobile is a first-class layout, not an
