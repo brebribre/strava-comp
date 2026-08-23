@@ -4,50 +4,67 @@ Concrete, ordered build steps. Each phase should be working and testable before 
 
 ---
 
-## Phase 0: Prerequisites
+## Phase 0: Prerequisites ✅ DONE
 
-- [ ] Create a Strava app at [strava.com/settings/api](https://www.strava.com/settings/api) → get `Client ID` + `Client Secret`
-- [ ] Create a Railway account
-- [ ] Install locally: Python 3.11+, Node.js, `uv` or `pip`, Postgres (local Docker, or point at Railway's dev DB)
-- [ ] Create a GitHub repo with two folders: `/backend` (FastAPI) and `/frontend` (Vue)
+- [x] Create a Strava app at [strava.com/settings/api](https://www.strava.com/settings/api) → get `Client ID` + `Client Secret`
+- [x] Create a Railway account
+- [x] Install locally: Python 3.11+, Node.js, `uv` or `pip`, Postgres (local Docker, or point at Railway's dev DB)
+- [x] Create a GitHub repo with two folders: `/backend` (FastAPI) and `/frontend` (Vue)
 
 ---
 
-## Phase 1: Backend Skeleton + Local DB Connection
+## Phase 1: Backend Skeleton + Local DB Connection ✅ DONE
 
 **Goal:** FastAPI app runs, connects to Postgres, has one working endpoint.
 
-1. Scaffold FastAPI project:
+1. Scaffold FastAPI project — built with a layered structure rather than flat modules
+   (`api → services → infra`); see [backend/README.md](backend/README.md):
    ```
    backend/
      app/
-       main.py
+       main.py            app factory, middleware, router mount
        config.py
-       db.py
-       models.py
+       api/               endpoints: router.py, deps.py, routes/
+       services/          business logic
+       infra/             db.py (engine/session) + strava.py (third-party client)
+       models/            SQLModel tables
+       schemas/           Pydantic request/response shapes
      requirements.txt
    ```
-2. Install deps: `fastapi`, `uvicorn`, `sqlmodel`, `httpx`, `python-dotenv`, `itsdangerous`
-3. Set up `.env` locally with a placeholder `DATABASE_URL`
-4. Write `db.py`: SQLModel engine + session dependency
+2. Install deps: `fastapi`, `uvicorn`, `sqlmodel`, `httpx`, `python-dotenv`, `itsdangerous`,
+   `pydantic-settings`, `psycopg[binary]` (psycopg3 — note the `postgresql+psycopg://` URL scheme)
+3. Set up `.env` locally with `DATABASE_URL` — Postgres runs via `docker-compose.yml` on host port **5433**
+4. Write `infra/db.py`: SQLModel engine + session dependency
 5. Write a throwaway `/health` endpoint that queries the DB (`SELECT 1`)
 6. Run locally: `uvicorn app.main:app --reload` → hit `/health` → confirm 200 OK
+7. Swagger UI at `/docs`, ReDoc at `/redoc`, raw schema at `/openapi.json`; `/` redirects to `/docs`
 
-✅ **Checkpoint:** Backend runs locally and talks to Postgres.
+✅ **Checkpoint:** Backend runs locally and talks to Postgres. *(verified: `/health` → 200 with DB up, 500 with DB stopped)*
 
 ---
 
-## Phase 2: Database Schema (Athletes, Activities, Groups)
+## Phase 2: Database Schema (Athletes, Activities, Groups) ✅ DONE
 
-1. Define models in `models.py` (SQLModel):
+Notes from the build: Strava-supplied IDs (`athletes.athlete_id`, `activities.id`) are
+`BIGINT` with `autoincrement=False` — activity IDs already exceed int32 and we always
+supply them ourselves. All timestamps are `TIMESTAMPTZ`. `groups.created_by` is
+`ON DELETE SET NULL` so a group outlives its creator; everything else cascades.
+
+1. Define models in `app/models/` (SQLModel), one module per table:
    - `Athlete` (athlete_id, name, access_token, refresh_token, token_expires_at)
    - `Activity` (id, owner_id FK, sport_type, distance, moving_time, elapsed_time, elevation, avg_hr, start_date, raw_data JSONB)
    - `Group` (id, name, invite_code, created_by FK, created_at)
    - `GroupMembership` (group_id FK, athlete_id FK, joined_at) — composite primary key `(group_id, athlete_id)`
 2. Add a startup hook or Alembic migration to create all four tables
+   — done via `create_db_and_tables()` in the FastAPI lifespan; Alembic still to come
 3. Manually insert fake rows (one athlete, one group, one membership), query them back, confirm relationships work
+   — automated as `backend/scripts/check_schema_roundtrip.py`:
+   ```bash
+   cd backend && .venv/bin/python -m scripts.check_schema_roundtrip
+   ```
 
 ✅ **Checkpoint:** Full schema exists, including groups, and round-trips correctly.
+*(verified: JSONB round-trip, tz-aware timestamps, group join, unique invite_code, cascade + SET NULL deletes)*
 
 ---
 

@@ -21,7 +21,8 @@ app/
     db.py          engine, session, table creation
     strava.py      Strava API client (OAuth, activities, webhooks)
 
-  models/        SQLModel tables (the DB schema)
+  models/        SQLModel tables: athlete.py, activity.py, group.py (Group + GroupMembership)
+                 base.py holds utcnow() and tz_column() — use tz_column for every datetime
   schemas/       Pydantic request/response shapes exposed by the API
 ```
 
