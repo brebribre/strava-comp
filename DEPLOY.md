@@ -154,6 +154,82 @@ background after login and logs how many activities it stored.
 
 ---
 
+## Custom domains (required for the session cookie to work)
+
+`up.railway.app` is on the [Public Suffix List](https://publicsuffix.org/list/), so
+`frontend-production-x.up.railway.app` and `backend-production-y.up.railway.app` are
+**different sites**. The session cookie is therefore third-party from the frontend's point of
+view: Safari blocks it outright, Firefox partitions it, Chrome blocks it in Incognito. The
+symptom is login appearing to succeed and then bouncing straight back to the login page.
+
+Putting both services on subdomains of one domain you own fixes it at the root — they share a
+registrable domain, so the cookie is first-party again.
+
+| | Host |
+|---|---|
+| Frontend | `app.bruderbande.com` |
+| Backend | `api.bruderbande.com` |
+
+Use **subdomains for both**. An apex domain (`bruderbande.com`) needs ALIAS/ANAME support that many
+DNS providers lack.
+
+### 1. Add the domains in Railway
+
+For each service: **Settings** → **Networking** → **Custom Domain**. Railway shows a CNAME
+target per domain.
+
+### 2. Point DNS at them
+
+At your DNS provider:
+
+```
+app   CNAME   <target Railway shows for the frontend>
+api   CNAME   <target Railway shows for the backend>
+```
+
+Wait for Railway to report the certificate as issued (usually minutes).
+
+### 3. Update the backend variables
+
+```bash
+railway variables --service backend --set "FRONTEND_ORIGIN=https://app.bruderbande.com" --set "STRAVA_REDIRECT_URI=https://api.bruderbande.com/auth/strava/callback" --set "COOKIE_SAMESITE=lax"
+```
+
+`COOKIE_SAMESITE` goes back to **`lax`**: with both hosts on one site the cookie is no longer
+cross-site, and `lax` is the safer default. (`COOKIE_SECURE` stays `true`.)
+
+### 4. Rebuild the frontend against the new API host
+
+`VITE_API_BASE_URL` is baked in **at build time**, so this needs a rebuild, not a restart.
+Edit it in `.railway/railway.ts`, then:
+
+```bash
+railway config apply
+```
+
+```bash
+railway up --service frontend
+```
+
+### 5. Update Strava
+
+[strava.com/settings/api](https://www.strava.com/settings/api) → Authorization Callback Domain →
+`api.bruderbande.com` (bare host, no scheme, no path). It must match the host in
+`STRAVA_REDIRECT_URI` exactly.
+
+### 6. Verify
+
+```bash
+curl -s https://api.bruderbande.com/health
+```
+
+Then log in at `https://app.bruderbande.com` — in **Safari**, which is the strictest. If the feed
+loads after login, the cookie is first-party and the problem is gone for every browser.
+
+Re-copy your invite links afterwards: they now live on `app.bruderbande.com`.
+
+---
+
 ## Then: Phase 7 webhooks
 
 With a public HTTPS URL, register the subscription once:

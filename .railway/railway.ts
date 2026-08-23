@@ -47,7 +47,7 @@ export default defineRailway(() => {
       // requires a rebuild, not just a restart. Not a secret, so it's declared here rather
       // than left to the dashboard, where forgetting it would ship a build pointing at
       // localhost.
-      VITE_API_BASE_URL: "https://backend-production-96ee.up.railway.app",
+      VITE_API_BASE_URL: "https://api.bruderbande.com",
     },
   });
 
