@@ -19,10 +19,11 @@ export default defineRailway(() => {
 
       BACKFILL_DAYS: "7",
       COOKIE_SECURE: "true",
-      // The frontend and API are on different railway.app subdomains, which browsers treat
-      // as cross-site, so "lax" would silently drop the session cookie on every API call.
-      // "none" requires Secure=true, which is set above.
-      COOKIE_SAMESITE: "none",
+      // app.bruderbande.com and api.bruderbande.com share a registrable domain, so the
+      // session cookie is same-site and first-party — "lax" is correct and safer than
+      // "none". (On *.up.railway.app it had to be "none", because up.railway.app is a
+      // public suffix, which made the two hosts different sites and the cookie third-party.)
+      COOKIE_SAMESITE: "lax",
 
       // Secrets live in the Railway dashboard, never in this file.
       // preserve() keeps whatever is already set there instead of overwriting it.
