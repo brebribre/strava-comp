@@ -29,30 +29,31 @@ async function handleLogout() {
   <!-- Backdrop only exists while the drawer is open on small screens. -->
   <div
     v-if="isOpen"
-    class="fixed inset-0 z-30 bg-slate-900/50 lg:hidden"
+    class="fixed inset-0 z-30 bg-ink/25 lg:hidden"
     aria-hidden="true"
     @click="close"
   />
 
   <aside
     :class="[
-      'flex w-64 shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900',
+      'flex w-64 shrink-0 flex-col border-r border-line bg-surface',
       // Off-canvas on phones, always in flow from lg up.
-      'fixed inset-y-0 left-0 z-40 transition-transform lg:static lg:z-auto lg:translate-x-0',
+      'fixed inset-y-0 left-0 z-40 lg:static lg:z-auto lg:translate-x-0',
+      'transition-transform duration-(--duration-soft) ease-(--ease-out-soft)',
       isOpen ? 'translate-x-0' : '-translate-x-full',
     ]"
   >
-    <div class="flex items-start justify-between border-b border-slate-200 p-4 dark:border-slate-700">
+    <div class="flex items-start justify-between border-b border-line p-4">
       <div class="min-w-0">
-        <p class="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
+        <p class="truncate text-sm font-semibold text-ink">
           {{ athlete?.name ?? '…' }}
         </p>
-        <p class="text-xs text-slate-500 dark:text-slate-400">Strava Group Tracker</p>
+        <p class="text-xs text-ink-muted">Strava Group Tracker</p>
       </div>
       <button
         type="button"
         aria-label="Close navigation"
-        class="-mr-2 -mt-1 rounded-lg p-2 text-slate-500 hover:bg-slate-100 lg:hidden dark:hover:bg-slate-800"
+        class="-mr-2 -mt-1 rounded-lg p-2 text-ink-muted hover:bg-raised lg:hidden"
         @click="close"
       >
         <svg class="size-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -62,26 +63,21 @@ async function handleLogout() {
     </div>
 
     <nav class="flex-1 overflow-y-auto p-2">
-      <p class="px-2 py-1 text-xs font-medium uppercase tracking-wide text-slate-400">Groups</p>
-      <p v-if="isLoading" class="px-2 py-2 text-sm text-slate-400">Loading…</p>
-      <p v-else-if="!groups.length" class="px-2 py-2 text-sm text-slate-400">No groups yet</p>
+      <p class="px-2 py-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">Groups</p>
+      <p v-if="isLoading" class="px-2 py-2 text-sm text-ink-subtle">Loading…</p>
+      <p v-else-if="!groups.length" class="px-2 py-2 text-sm text-ink-subtle">No groups yet</p>
       <button
         v-for="group in groups"
         :key="group.id"
-        :class="[
-          'mb-1 block w-full truncate rounded-lg px-3 py-2 text-left text-sm transition',
-          Number(route.params.id) === group.id
-            ? 'bg-strava/10 font-medium text-strava'
-            : 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800',
-        ]"
+        :class="[ 'mb-1 block w-full truncate rounded-lg px-3 py-2 text-left text-sm transition', Number(route.params.id) === group.id ? 'bg-raised font-medium text-ink' : 'text-ink hover:bg-raised ', ]"
         @click="openGroup(group.id)"
       >
         {{ group.name }}
-        <span class="text-xs text-slate-400">· {{ group.member_count }}</span>
+        <span class="text-xs text-ink-subtle">· {{ group.member_count }}</span>
       </button>
     </nav>
 
-    <div class="border-t border-slate-200 p-2 dark:border-slate-700">
+    <div class="border-t border-line p-2">
       <AppButton variant="ghost" class="w-full" @click="router.push({ name: 'groups' })">
         Manage groups
       </AppButton>

@@ -78,23 +78,23 @@ async function handleJoin() {
     </div>
 
     <AppCard title="Your groups">
-      <p v-if="isLoading" class="text-sm text-slate-400">Loading…</p>
+      <p v-if="isLoading" class="text-sm text-ink-subtle">Loading…</p>
       <EmptyState
         v-else-if="!groups.length"
         title="You're not in any groups yet"
         hint="Create one and share the invite code, or join with a code someone sent you."
       />
-      <ul v-else class="divide-y divide-slate-100 dark:divide-slate-700">
+      <ul v-else class="divide-y divide-line">
         <li
           v-for="group in groups"
           :key="group.id"
           class="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between"
         >
           <div>
-            <p class="font-medium text-slate-900 dark:text-slate-100">{{ group.name }}</p>
-            <p class="text-xs text-slate-500 dark:text-slate-400">
+            <p class="font-medium text-ink">{{ group.name }}</p>
+            <p class="text-xs text-ink-muted">
               {{ group.member_count }} member{{ group.member_count === 1 ? '' : 's' }} · invite
-              <code class="rounded bg-slate-100 px-1 py-0.5 dark:bg-slate-700">{{
+              <code class="rounded-sm bg-raised px-1 py-0.5">{{
                 group.invite_code
               }}</code>
             </p>

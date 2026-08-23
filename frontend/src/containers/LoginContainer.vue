@@ -17,8 +17,8 @@ const { message } = useLoginError(
 <template>
   <AppCard class="w-full max-w-md">
     <div class="text-center">
-      <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Strava Group Tracker</h1>
-      <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
+      <h1 class="text-2xl font-bold text-ink">Strava Group Tracker</h1>
+      <p class="mt-2 text-sm text-ink-muted">
         Compare training with your group.
       </p>
 

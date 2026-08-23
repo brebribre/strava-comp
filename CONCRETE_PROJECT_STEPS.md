@@ -443,6 +443,27 @@ activity detail, login. No horizontal page overflow on any of them.)*
 
 ---
 
+## Phase 9c: Monochrome redesign ✅ DONE
+
+Greyscale throughout — no accent colour, hierarchy from contrast and weight. Subtle corners
+(3–9px), and small deliberate motion: press-scale on buttons and chips, 1px card lift on hover,
+a tab underline that scales in, and a 4px staggered rise on lists. All of it disabled under
+`prefers-reduced-motion`.
+
+Tokens and the motion system are documented in
+[frontend/REQUIREMENTS.md](frontend/REQUIREMENTS.md) §11a.
+
+Gotcha worth remembering: **Tailwind v4 hoists `@theme` to `:root` regardless of a surrounding
+media query**, so `@media (prefers-color-scheme: dark) { @theme { … } }` applies the dark palette
+unconditionally — light mode silently rendered dark. Dark values must be plain custom property
+declarations on `:root` inside the media query.
+
+✅ **Checkpoint:** consistent monochrome UI in both themes.
+*(verified: light and dark at desktop and 375px, including the stacked chart's tonal ramp
+inverting per theme.)*
+
+---
+
 ## Phase 10: Deploy Everything to Railway
 
 1. Push backend to GitHub, connect to a Railway service

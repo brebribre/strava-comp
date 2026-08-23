@@ -1,33 +1,38 @@
+import { computed } from 'vue'
+
 /**
- * Stable colours per sport.
+ * Monochrome chart palette.
  *
- * Charts render to canvas, so Tailwind classes can't reach them — these are literal values.
- * Known sports get a fixed colour so the same sport looks the same across every chart;
- * anything else is hashed into the palette rather than colliding on "first seen".
+ * Charts render to canvas, so they can't read CSS variables or Tailwind classes — the
+ * values are resolved here instead. With no hue to separate series, stacked segments are
+ * distinguished by lightness, spaced far enough apart to stay legible next to each other.
  */
-const NAMED: Record<string, string> = {
-  Run: '#fc4c02',
-  TrailRun: '#f97316',
-  Ride: '#2563eb',
-  VirtualRide: '#3b82f6',
-  Tennis: '#16a34a',
-  WeightTraining: '#9333ea',
-  Swim: '#0891b2',
-  Walk: '#ca8a04',
-  Hike: '#65a30d',
-  Workout: '#db2777',
-  Yoga: '#7c3aed',
+const LIGHT_RAMP = ['#171717', '#404040', '#666666', '#8c8c8c', '#b0b0b0', '#cfcfcf']
+const DARK_RAMP = ['#fafafa', '#cfcfcf', '#a3a3a3', '#7a7a7a', '#555555', '#3a3a3a']
+
+function prefersDark(): boolean {
+  return typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches
 }
 
-const FALLBACK = ['#dc2626', '#0d9488', '#4f46e5', '#b45309', '#be185d', '#0369a1']
-
 export function useSportColors() {
-  function colorFor(sport: string): string {
-    if (NAMED[sport]) return NAMED[sport]
-    let hash = 0
-    for (let i = 0; i < sport.length; i++) hash = (hash * 31 + sport.charCodeAt(i)) >>> 0
-    return FALLBACK[hash % FALLBACK.length]
+  const ramp = computed(() => (prefersDark() ? DARK_RAMP : LIGHT_RAMP))
+
+  /**
+   * Tone is assigned by position in the sorted list of sports present, not hashed — a hash
+   * would scatter adjacent stack segments onto near-identical greys.
+   */
+  function colorForIndex(index: number): string {
+    return ramp.value[index % ramp.value.length]
   }
 
-  return { colorFor }
+  function colorFor(sport: string, all: string[] = []): string {
+    const index = all.indexOf(sport)
+    return colorForIndex(index >= 0 ? index : 0)
+  }
+
+  /** Grid, ticks and legend text for Chart.js, matching the current theme. */
+  const chartInk = computed(() => (prefersDark() ? '#a3a3a3' : '#525252'))
+  const chartGrid = computed(() => (prefersDark() ? '#262626' : '#e5e5e5'))
+
+  return { colorFor, colorForIndex, chartInk, chartGrid }
 }

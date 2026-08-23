@@ -6,18 +6,18 @@ const { toggle } = useSidebar()
 
 <template>
   <header
-    class="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-900"
+    class="flex items-center gap-3 border-b border-line bg-surface px-4 py-3"
   >
     <button
       type="button"
       aria-label="Open navigation"
-      class="-ml-2 rounded-lg p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+      class="-ml-2 rounded-lg p-2 text-ink-muted hover:bg-raised"
       @click="toggle"
     >
       <svg class="size-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
       </svg>
     </button>
-    <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">Strava Group Tracker</p>
+    <p class="text-sm font-semibold text-ink">Strava Group Tracker</p>
   </header>
 </template>

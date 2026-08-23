@@ -49,7 +49,7 @@ function statsFor(item: {
   <div class="mx-auto max-w-2xl space-y-4">
     <AppAlert v-if="error" tone="error">{{ error }}</AppAlert>
 
-    <p v-if="isLoading" class="py-10 text-center text-sm text-slate-400">Loading feed…</p>
+    <p v-if="isLoading" class="py-10 text-center text-sm text-ink-subtle">Loading feed…</p>
 
     <EmptyState
       v-else-if="!days.length"
@@ -59,14 +59,15 @@ function statsFor(item: {
 
     <template v-else>
       <section v-for="day in days" :key="day.label" class="space-y-3">
-        <h2 class="pt-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+        <h2 class="animate-rise pt-2 text-[11px] font-semibold uppercase tracking-wider text-ink-subtle">
           {{ day.label }}
         </h2>
 
-        <AppCard
+                <AppCard
           v-for="entry in day.entries"
           :key="entry.item.activity_id"
-          class="cursor-pointer transition hover:border-slate-300 dark:hover:border-slate-600"
+          interactive
+          class="animate-rise"
           @click="openActivity(entry.item.activity_id)"
         >
           <article class="flex gap-3">
@@ -76,19 +77,19 @@ function statsFor(item: {
             />
             <div class="min-w-0 flex-1">
               <header class="flex items-baseline justify-between gap-2">
-                <p class="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
+                <p class="truncate text-sm font-semibold text-ink">
                   {{ entry.item.athlete_name }}
                 </p>
-                <time class="shrink-0 text-xs text-slate-400">{{
+                <time class="shrink-0 text-xs text-ink-subtle">{{
                   time(entry.item.start_date)
                 }}</time>
               </header>
 
-              <p class="mt-0.5 truncate text-sm text-slate-700 dark:text-slate-300">
+              <p class="mt-0.5 truncate text-sm text-ink">
                 {{ entry.item.name ?? 'Untitled activity' }}
                 <span
                   v-if="entry.item.sport_type"
-                  class="ml-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+                  class="ml-1 rounded-sm border border-line px-1.5 py-0.5 text-[11px] text-ink-muted"
                 >
                   {{ entry.item.sport_type }}
                 </span>

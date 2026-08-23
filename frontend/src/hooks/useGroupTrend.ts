@@ -5,9 +5,6 @@ import { ApiError } from '@/api/request'
 import { useSportColors } from '@/hooks/useSportColors'
 import type { GroupTrend } from '@/types/api'
 
-/** Colours for per-member series (moving-time mode). Sports have their own palette. */
-const MEMBER_COLOURS = ['#fc4c02', '#2563eb', '#16a34a', '#9333ea', '#dc2626', '#0891b2']
-
 export type TrendMetric = 'moving_time' | 'activity_count'
 
 export const TREND_METRICS: { value: TrendMetric; label: string; axis: string }[] = [
@@ -17,7 +14,7 @@ export const TREND_METRICS: { value: TrendMetric; label: string; axis: string }[
 
 export function useGroupTrend(groupId: () => number, days: () => number) {
   const api = useGroupApi()
-  const { colorFor } = useSportColors()
+  const { colorFor, colorForIndex, chartInk, chartGrid } = useSportColors()
 
   const metric = ref<TrendMetric>('moving_time')
   const trend = ref<GroupTrend | null>(null)
@@ -129,8 +126,8 @@ export function useGroupTrend(groupId: () => number, days: () => number) {
               return total + (bucket?.activity_count ?? 0)
             }, 0),
           ),
-          backgroundColor: colorFor(sport),
-          borderColor: colorFor(sport),
+          backgroundColor: colorFor(sport, sports),
+          borderColor: colorFor(sport, sports),
           borderRadius: 3,
           stack: 'activities',
         })),
@@ -147,8 +144,8 @@ export function useGroupTrend(groupId: () => number, days: () => number) {
           const seconds = point.by_sport.reduce((total, b) => total + b.total_moving_time, 0)
           return Math.round((seconds / 60) * 10) / 10
         }),
-        backgroundColor: MEMBER_COLOURS[index % MEMBER_COLOURS.length],
-        borderColor: MEMBER_COLOURS[index % MEMBER_COLOURS.length],
+        backgroundColor: colorForIndex(index),
+        borderColor: colorForIndex(index),
         borderRadius: 4,
       })),
     }
@@ -161,8 +158,12 @@ export function useGroupTrend(groupId: () => number, days: () => number) {
     return {
       responsive: true,
       maintainAspectRatio: false,
+      // Canvas can't inherit the page palette, so the theme is passed in explicitly.
       plugins: {
-        legend: { position: 'bottom' as const },
+        legend: {
+          position: 'bottom' as const,
+          labels: { color: chartInk.value, boxWidth: 10, boxHeight: 10, usePointStyle: true },
+        },
         tooltip: {
           // Stacked bars are only readable if the tooltip shows the whole week.
           mode: stacked ? ('index' as const) : ('nearest' as const),
@@ -171,12 +172,19 @@ export function useGroupTrend(groupId: () => number, days: () => number) {
         },
       },
       scales: {
-        x: { stacked },
+        x: {
+          stacked,
+          grid: { display: false },
+          border: { color: chartGrid.value },
+          ticks: { color: chartInk.value },
+        },
         y: {
           stacked,
           beginAtZero: true,
-          title: { display: true, text: axis },
-          ticks: stacked ? { precision: 0 } : {},
+          title: { display: true, text: axis, color: chartInk.value },
+          grid: { color: chartGrid.value },
+          border: { display: false },
+          ticks: { color: chartInk.value, precision: stacked ? 0 : undefined },
         },
       },
     }

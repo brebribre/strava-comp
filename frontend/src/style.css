@@ -1,13 +1,119 @@
 @import "tailwindcss";
 
-/* Tailwind v4 is CSS-first: design tokens are declared here, not in a JS config file. */
+/**
+ * Monochrome design system.
+ *
+ * Tailwind v4 is CSS-first, so tokens live here rather than in a JS config. Hierarchy is
+ * carried by contrast and weight, never hue — there is no accent colour to lean on.
+ */
 @theme {
-  --color-strava: #fc4c02;
-  --color-strava-dark: #e34402;
+  /* Surfaces, from page background to raised card. */
+  --color-canvas: #fafafa;
+  --color-surface: #ffffff;
+  --color-raised: #f5f5f5;
+  --color-line: #e5e5e5;
+  --color-line-strong: #d4d4d4;
+
+  /* Ink: the single "accent", i.e. maximum contrast against the canvas. */
+  --color-ink: #171717;
+  --color-ink-muted: #525252;
+  --color-ink-subtle: #a3a3a3;
+  --color-ink-inverse: #fafafa;
+
+  /* Subtle corners throughout — nothing pill-shaped except avatars. */
+  --radius-sm: 3px;
+  --radius-md: 5px;
+  --radius-lg: 7px;
+  --radius-xl: 9px;
+
+  /* One easing and two durations, so motion feels like one system. */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-quick: 130ms;
+  --duration-soft: 260ms;
+}
+
+/**
+ * Dark mode overrides the *variables*, not the theme.
+ *
+ * `@theme` blocks are hoisted to :root by Tailwind regardless of any media query wrapping
+ * them, so nesting one here would apply the dark palette unconditionally. Plain custom
+ * property declarations are scoped normally.
+ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-canvas: #0a0a0a;
+    --color-surface: #141414;
+    --color-raised: #1c1c1c;
+    --color-line: #262626;
+    --color-line-strong: #383838;
+
+    --color-ink: #fafafa;
+    --color-ink-muted: #a3a3a3;
+    --color-ink-subtle: #6b6b6b;
+    --color-ink-inverse: #0a0a0a;
+  }
+}
+
+:root {
+  /* Tells the browser to theme native controls — date pickers, number spinners,
+     scrollbars — to match. Without it the date field keeps a light widget on a dark page. */
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+  }
 }
 
 html,
 body,
 #app {
   height: 100%;
+}
+
+body {
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+}
+
+/* Entrance motion. Deliberately small: 4px and a fade, never a slide-in show. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-rise {
+  animation: rise var(--duration-soft) var(--ease-out-soft) both;
+}
+
+/* Stagger helper for lists — a hint of sequence, not a cascade. */
+.animate-rise:nth-child(2) {
+  animation-delay: 40ms;
+}
+.animate-rise:nth-child(3) {
+  animation-delay: 80ms;
+}
+.animate-rise:nth-child(4) {
+  animation-delay: 120ms;
+}
+.animate-rise:nth-child(n + 5) {
+  animation-delay: 160ms;
+}
+
+/* Anyone who asks for less motion gets none of it. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

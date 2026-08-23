@@ -13,7 +13,7 @@ worked around in code.
 | Build tool | **Vite** |
 | Framework | **Vue 3** (`<script setup>`) |
 | Language | **TypeScript** — no plain `.js` files |
-| Styling | **Tailwind CSS** — utility classes in templates, no separate CSS modules |
+| Styling | **Tailwind CSS v4** — utility classes in templates; design tokens in `src/style.css` |
 | Router | Vue Router |
 
 ---
@@ -287,6 +287,37 @@ DOM/SVG charts styled by Tailwind, Unovis or hand-rolled SVG is the direction, n
 Upgrade path: if the dashboard grows into something richer (zoom, brushing, many series),
 swap to ECharts. Keeping all chart code inside a container + hook pair means that swap
 touches one container, not the app.
+
+## 11a. Visual design
+
+**Monochrome.** There is no accent colour: hierarchy comes from contrast, weight and fill.
+All tokens live in `src/style.css` — components reference `bg-surface`, `text-ink-muted`,
+`border-line` and so on, never a raw Tailwind palette colour like `slate-700`.
+
+| Token group | Purpose |
+|---|---|
+| `canvas` / `surface` / `raised` | page → card → inset, in ascending contrast |
+| `line` / `line-strong` | borders, and the border on hover |
+| `ink` / `ink-muted` / `ink-subtle` / `ink-inverse` | text, and the "accent" fill |
+| `--radius-sm…xl` (3–9px) | **subtle** corners; only avatars and swatches are rounder |
+| `--duration-quick` (130ms) / `--duration-soft` (260ms), `--ease-out-soft` | one motion system |
+
+**Dark mode overrides the CSS variables, not `@theme`.** Tailwind v4 hoists every `@theme`
+block to `:root` regardless of any media query around it, so a `@theme` inside
+`prefers-color-scheme: dark` applies unconditionally. Dark values are plain custom property
+declarations on `:root` inside the media query.
+
+**Motion is small and purposeful:**
+- buttons and chips scale to `0.97` on press — the click should feel physical
+- cards marked `interactive` lift 1px and darken their border on hover
+- the tab underline scales in from the centre
+- lists use `.animate-rise` (4px + fade), staggered up to four items
+- everything is disabled under `prefers-reduced-motion: reduce`
+
+**Charts** render to canvas and cannot read CSS variables, so `useSportColors` resolves the
+palette in JS: a **tonal ramp** (dark→light, inverted for dark mode) assigned by position in
+the sorted sport list, never hashed — hashing would drop adjacent stack segments onto
+near-identical greys. Axis, grid and legend colours are passed explicitly per theme.
 
 ## 11b. Responsive rules
 

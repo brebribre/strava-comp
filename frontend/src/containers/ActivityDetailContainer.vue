@@ -61,28 +61,28 @@ function goBack() {
     <AppButton variant="ghost" @click="goBack">← Back to feed</AppButton>
 
     <AppAlert v-if="error" tone="error">{{ error }}</AppAlert>
-    <p v-else-if="isLoading" class="py-10 text-center text-sm text-slate-400">Loading activity…</p>
+    <p v-else-if="isLoading" class="py-10 text-center text-sm text-ink-subtle">Loading activity…</p>
 
     <template v-else-if="activity">
       <AppCard>
         <header class="flex gap-3">
           <AppAvatar :initials="initials(activity.athlete_name)" :color-seed="activity.athlete_id" />
           <div class="min-w-0 flex-1">
-            <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            <p class="text-sm font-semibold text-ink">
               {{ activity.athlete_name }}
             </p>
-            <p class="text-xs text-slate-400">
+            <p class="text-xs text-ink-subtle">
               {{ shortDate(activity.start_date) }} at {{ time(activity.start_date) }}
               <span v-if="activity.device_name"> · {{ activity.device_name }}</span>
             </p>
           </div>
         </header>
 
-        <h1 class="mt-4 text-lg font-bold text-slate-900 dark:text-slate-100">
+        <h1 class="mt-4 text-lg font-bold text-ink">
           {{ activity.name ?? 'Untitled activity' }}
           <span
             v-if="activity.sport_type"
-            class="ml-1 rounded-full bg-slate-100 px-2 py-0.5 align-middle text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+            class="ml-1 rounded-sm border border-line px-1.5 py-0.5 align-middle text-[11px] font-medium text-ink-muted"
           >
             {{ activity.sport_type }}
           </span>
@@ -90,11 +90,11 @@ function goBack() {
 
         <p
           v-if="activity.description"
-          class="mt-2 whitespace-pre-line text-sm text-slate-700 dark:text-slate-300"
+          class="mt-2 whitespace-pre-line text-sm text-ink"
         >
           {{ activity.description }}
         </p>
-        <p v-else class="mt-2 text-sm italic text-slate-400">No description</p>
+        <p v-else class="mt-2 text-sm italic text-ink-subtle">No description</p>
 
         <StatRow class="mt-5" :stats="stats()" />
 

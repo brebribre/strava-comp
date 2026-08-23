@@ -3,7 +3,7 @@ import { computed } from 'vue'
 
 const props = withDefaults(
   defineProps<{ percent: number; size?: number; stroke?: number; complete?: boolean }>(),
-  { size: 200, stroke: 14, complete: false },
+  { size: 200, stroke: 10, complete: false },
 )
 
 const radius = computed(() => (props.size - props.stroke) / 2)
@@ -21,8 +21,10 @@ const offset = computed(() => circumference.value * (1 - Math.min(props.percent,
         :r="radius"
         fill="none"
         :stroke-width="stroke"
-        class="stroke-slate-200 dark:stroke-slate-700"
+        class="stroke-line"
       />
+      <!-- Completion reads as a solid full ring; in progress is the same ink at lower
+           opacity, so the difference is weight rather than colour. -->
       <circle
         :cx="size / 2"
         :cy="size / 2"
@@ -32,8 +34,8 @@ const offset = computed(() => circumference.value * (1 - Math.min(props.percent,
         stroke-linecap="round"
         :stroke-dasharray="circumference"
         :stroke-dashoffset="offset"
-        :class="complete ? 'stroke-green-500' : 'stroke-strava'"
-        class="transition-[stroke-dashoffset] duration-700"
+        class="stroke-ink transition-[stroke-dashoffset] duration-700 ease-(--ease-out-soft)"
+        :class="complete ? '' : 'opacity-55'"
       />
     </svg>
     <div class="absolute inset-0 flex flex-col items-center justify-center">

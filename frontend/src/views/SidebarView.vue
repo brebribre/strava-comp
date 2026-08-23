@@ -5,7 +5,7 @@ import SidebarContainer from '@/containers/SidebarContainer.vue'
 
 <template>
   <!-- Layout only: sidebar (a drawer below lg) plus whatever the child route resolves to. -->
-  <div class="flex h-full bg-slate-50 dark:bg-slate-900">
+  <div class="flex h-full bg-canvas">
     <SidebarContainer />
 
     <div class="flex min-w-0 flex-1 flex-col">

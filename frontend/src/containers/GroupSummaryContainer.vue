@@ -61,7 +61,7 @@ async function handleSync() {
     <AppAlert v-else-if="lastResult" tone="success">{{ lastResult }}</AppAlert>
 
     <AppCard title="Totals">
-      <p v-if="isLoading" class="text-sm text-slate-400">Loading…</p>
+      <p v-if="isLoading" class="text-sm text-ink-subtle">Loading…</p>
       <EmptyState
         v-else-if="!members.length"
         title="No members yet"
@@ -70,7 +70,7 @@ async function handleSync() {
       <DataTable v-else :columns="columns" :rows="members" row-key="athlete_id">
         <template #name="{ row }">
           <span class="font-medium">{{ row.name }}</span>
-          <span v-if="row.by_sport.length" class="ml-2 hidden text-xs text-slate-400 sm:inline">
+          <span v-if="row.by_sport.length" class="ml-2 hidden text-xs text-ink-subtle sm:inline">
             {{ row.by_sport.map((s: any) => s.sport_type).join(', ') }}
           </span>
         </template>
@@ -98,19 +98,19 @@ async function handleSync() {
       <!-- Filters apply to both metrics: an empty selection means "everything". -->
       <div class="mb-4 space-y-2">
         <div v-if="trend.availableSports.value.length > 1" class="flex flex-wrap items-center gap-2">
-          <span class="w-16 shrink-0 text-xs text-slate-400">Sport</span>
+          <span class="w-16 shrink-0 text-xs text-ink-subtle">Sport</span>
           <FilterChip
             v-for="sport in trend.availableSports.value"
             :key="sport"
             :label="sport"
-            :color="colorFor(sport)"
+            :color="colorFor(sport, trend.availableSports.value)"
             :active="trend.sportFilter.value.has(sport)"
             @toggle="trend.toggleSport(sport)"
           />
         </div>
 
         <div v-if="trend.availableAthletes.value.length > 1" class="flex flex-wrap items-center gap-2">
-          <span class="w-16 shrink-0 text-xs text-slate-400">Athlete</span>
+          <span class="w-16 shrink-0 text-xs text-ink-subtle">Athlete</span>
           <FilterChip
             v-for="person in trend.availableAthletes.value"
             :key="person.id"
@@ -121,7 +121,7 @@ async function handleSync() {
           <button
             v-if="trend.hasFilters.value"
             type="button"
-            class="text-xs text-slate-400 underline hover:text-slate-600 dark:hover:text-slate-200"
+            class="text-xs text-ink-subtle underline hover:text-ink"
             @click="trend.clearFilters()"
           >
             Clear
@@ -129,7 +129,7 @@ async function handleSync() {
         </div>
       </div>
 
-      <p v-if="trend.isLoading.value" class="text-sm text-slate-400">Loading…</p>
+      <p v-if="trend.isLoading.value" class="text-sm text-ink-subtle">Loading…</p>
       <EmptyState
         v-else-if="!trend.hasData.value"
         :title="trend.hasFilters.value ? 'Nothing matches these filters' : 'Nothing logged in this window'"

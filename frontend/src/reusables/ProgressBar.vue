@@ -3,10 +3,10 @@ withDefaults(defineProps<{ percent: number; complete?: boolean }>(), { complete:
 </script>
 
 <template>
-  <div class="h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+  <div class="h-1.5 w-full overflow-hidden rounded-sm bg-line">
     <div
-      class="h-full rounded-full transition-[width] duration-700"
-      :class="complete ? 'bg-green-500' : 'bg-strava'"
+      class="h-full rounded-sm bg-ink transition-[width] duration-(--duration-soft) ease-(--ease-out-soft)"
+      :class="complete ? '' : 'opacity-60'"
       :style="{ width: `${Math.min(percent, 100)}%` }"
     />
   </div>

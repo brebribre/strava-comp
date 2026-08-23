@@ -41,7 +41,7 @@ function openSettings() {
 <template>
   <div class="space-y-6">
     <AppAlert v-if="error" tone="error">{{ error }}</AppAlert>
-    <p v-else-if="isLoading" class="py-10 text-center text-sm text-slate-400">Loading target…</p>
+    <p v-else-if="isLoading" class="py-10 text-center text-sm text-ink-subtle">Loading target…</p>
 
     <EmptyState
       v-else-if="!hasTarget"
@@ -60,10 +60,10 @@ function openSettings() {
       <AppCard>
         <div class="flex flex-col items-center gap-6 py-4 sm:flex-row sm:justify-center sm:gap-12">
           <ProgressRing :percent="me.percent" :complete="me.is_complete" :size="ringSize">
-            <span class="text-4xl font-bold tabular-nums text-slate-900 dark:text-slate-100">
-              {{ me.completed }}<span class="text-slate-400">/{{ progress.target.count }}</span>
+            <span class="text-4xl font-bold tabular-nums text-ink">
+              {{ me.completed }}<span class="text-ink-subtle">/{{ progress.target.count }}</span>
             </span>
-            <span class="mt-1 text-xs uppercase tracking-wide text-slate-400">
+            <span class="mt-1 text-xs uppercase tracking-wide text-ink-subtle">
               {{ periodLabel }}
             </span>
           </ProgressRing>
@@ -71,15 +71,15 @@ function openSettings() {
           <div class="text-center sm:text-left">
             <p
               class="text-2xl font-bold"
-              :class="me.is_complete ? 'text-green-500' : 'text-slate-900 dark:text-slate-100'"
+              :class="me.is_complete ? 'text-ink' : 'text-ink'"
             >
               {{ headline }}
             </p>
-            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
+            <p class="mt-2 text-sm text-ink-muted">
               {{ progress.target.count }} exercises per {{ progress.target.period }} · target runs
               until {{ utcDate(progress.target.until) }}
             </p>
-            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            <p class="mt-1 text-sm text-ink-muted">
               {{ progress.days_left_in_period }} day{{
                 progress.days_left_in_period === 1 ? '' : 's'
               }}
@@ -107,17 +107,17 @@ function openSettings() {
             <span class="font-medium">{{ row.name }}</span>
           </template>
           <template #completed="{ row }">
-            {{ row.completed }}<span class="text-slate-400">/{{ progress.target.count }}</span>
+            {{ row.completed }}<span class="text-ink-subtle">/{{ progress.target.count }}</span>
           </template>
           <template #remaining="{ row }">
-            <span :class="row.is_complete ? 'text-green-500' : ''">
+            <span :class="row.is_complete ? 'text-ink' : ''">
               {{ row.is_complete ? 'done' : row.remaining }}
             </span>
           </template>
           <template #percent="{ row }">
             <div class="flex items-center gap-3">
               <ProgressBar :percent="row.percent" :complete="row.is_complete" class="w-16 sm:w-32" />
-              <span class="w-12 text-right text-xs tabular-nums text-slate-500">
+              <span class="w-12 text-right text-xs tabular-nums text-ink-muted">
                 {{ Math.round(row.percent) }}%
               </span>
             </div>

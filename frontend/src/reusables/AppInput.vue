@@ -5,14 +5,12 @@ const model = defineModel<string>({ required: true })
 
 <template>
   <label class="block">
-    <span v-if="label" class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
-      {{ label }}
-    </span>
+    <span v-if="label" class="mb-1.5 block text-xs font-medium text-ink-muted">{{ label }}</span>
     <input
       v-model="model"
       :placeholder="placeholder"
       :disabled="disabled"
-      class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-strava focus:ring-2 focus:ring-strava/20 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+      class="w-full rounded-md border border-line bg-surface px-3 py-2 text-sm text-ink outline-none placeholder:text-ink-subtle disabled:opacity-40 transition-colors duration-(--duration-quick) focus:border-ink"
     />
   </label>
 </template>

@@ -18,12 +18,12 @@ function cell(row: T, key: string): unknown {
   <div class="overflow-x-auto">
     <table class="w-full text-sm">
       <thead>
-        <tr class="border-b border-slate-200 dark:border-slate-700">
+        <tr class="border-b border-line">
           <th
             v-for="column in columns"
             :key="column.key"
             :class="[
-              'px-3 py-2 font-medium text-slate-500 dark:text-slate-400',
+              'px-3 py-2 text-[11px] font-medium uppercase tracking-wide text-ink-subtle',
               column.align === 'right' ? 'text-right' : 'text-left',
             ]"
           >
@@ -35,13 +35,13 @@ function cell(row: T, key: string): unknown {
         <tr
           v-for="row in rows"
           :key="String(row[rowKey])"
-          class="border-b border-slate-100 last:border-0 dark:border-slate-700/50"
+          class="border-b border-line/60 transition-colors duration-(--duration-quick) last:border-0 hover:bg-raised"
         >
           <td
             v-for="column in columns"
             :key="column.key"
             :class="[
-              'px-3 py-3 text-slate-900 dark:text-slate-100',
+              'px-3 py-3 text-ink',
               column.align === 'right' ? 'text-right tabular-nums' : 'text-left',
             ]"
           >

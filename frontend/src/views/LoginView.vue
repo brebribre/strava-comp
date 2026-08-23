@@ -3,7 +3,7 @@ import LoginContainer from '@/containers/LoginContainer.vue'
 </script>
 
 <template>
-  <div class="flex min-h-full items-center justify-center bg-slate-50 p-6 dark:bg-slate-900">
+  <div class="flex min-h-full items-center justify-center bg-canvas p-6">
     <LoginContainer />
   </div>
 </template>
