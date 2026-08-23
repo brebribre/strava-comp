@@ -105,15 +105,35 @@ Manual: real login confirmed — athlete row written with both tokens, `/me` ret
 
 ---
 
-## Phase 4: Token Refresh Logic
+## Phase 4: Token Refresh Logic ✅ DONE
+
+> ℹ️ **Resolved blocker, worth remembering.** The data API briefly returned
+> `403 {"resource":"Application","field":"Status","code":"Inactive"}`: Strava's Developer
+> Program Standard Tier requires the **app owner to hold a paid Strava subscription**.
+> Without it, OAuth and token refresh keep working while every data endpoint
+> (`/athlete`, `/athlete/activities`, webhooks) is refused — so this failure mode looks like
+> a code bug but isn't. Fixed by subscribing on the owning account (2026-08-23).
+> Verified since: `/athlete` 200, `/athlete/activities` 200 returning private activities too.
 
 1. Write `get_valid_access_token(athlete_id)`:
    - reads athlete from DB
    - if `token_expires_at` is past, calls Strava's refresh endpoint, updates DB, returns new token
    - else returns the stored token
 2. Test: manually expire a token's timestamp in the DB, confirm it auto-refreshes on next use
+   — automated in `backend/scripts/check_token_refresh.py`:
+   ```bash
+   cd backend && .venv/bin/python -m scripts.check_token_refresh          # stubbed
+   cd backend && .venv/bin/python -m scripts.check_token_refresh --live   # real Strava refresh
+   ```
+
+Implementation notes: lives in `app/services/tokens.py`; refreshes 5 minutes early so a token
+can't expire mid-call; locks the athlete row `FOR UPDATE` so concurrent webhook deliveries
+can't race two refreshes; persists the refresh token too, since Strava may rotate it; raises
+`ReauthorizationRequired` when the refresh token is rejected.
 
 ✅ **Checkpoint:** Token refresh works without manual intervention.
+*(verified: stubbed — valid/expired/near-expiry/revoked/unknown-athlete paths; live — back-dated
+the real athlete's expiry, confirmed the call went to Strava and fresh credentials were stored)*
 
 ---
 
