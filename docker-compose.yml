@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: strava-comp-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: strava
+      POSTGRES_PASSWORD: strava
+      POSTGRES_DB: strava
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U strava -d strava"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:
