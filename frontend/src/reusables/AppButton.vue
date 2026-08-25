@@ -13,7 +13,7 @@ defineEmits<{ click: [MouseEvent] }>()
 
 // Monochrome: emphasis comes from fill vs outline vs bare, not from hue.
 const styles = {
-  primary: 'bg-ink text-ink-inverse hover:opacity-90',
+  primary: 'bg-accent text-accent-contrast hover:opacity-90',
   secondary: 'bg-surface text-ink ring-1 ring-line-strong hover:bg-raised',
   ghost: 'text-ink-muted hover:bg-raised hover:text-ink',
 }
@@ -28,7 +28,7 @@ const styles = {
       'transition-all duration-(--duration-quick) ease-(--ease-out-soft)',
       // The press is the animation: a barely-there scale that makes the click feel physical.
       'active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100',
-      'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink',
+      'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
       styles[variant],
     ]"
     @click="$emit('click', $event)"

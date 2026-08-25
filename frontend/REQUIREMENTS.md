@@ -332,6 +332,22 @@ Drawn in **`--color-ink`** at full opacity — white in dark mode, near-black in
 Sizing and spacing are the caller's: 48px + label + `py-12` for full-page loads, 36px + `py-6`
 inline, 26px + `py-4` in the sidebar.
 
+**Accent colour** (Appearance, in the sidebar): the palette is monochrome by default, and an
+optional accent recolours what's *active* — primary buttons, tabs, selected nav, progress
+fills, the GPS trace — never body text.
+
+Backgrounds tint too. The surface tokens are **derived**, not overridden:
+`--color-canvas: color-mix(in srgb, var(--tint) var(--tint-canvas), var(--base-canvas))`, so JS
+only ever sets `--color-accent` and the four `--tint-*` percentages. Light and dark keep working
+because they swap the `--base-*` values underneath. Tint strength is None / Subtle / Strong, and
+cards take slightly more than the page so depth ordering survives the wash.
+
+Text on the accent is chosen by **WCAG relative luminance**, not by eye — otherwise a yellow
+accent gets white text on it.
+
+Stored in `localStorage` and applied before mount, so a saved colour doesn't flash monochrome
+first. It's a per-device display preference, so it deliberately isn't saved to the account.
+
 **Motion is small and purposeful:**
 - buttons and chips scale to `0.97` on press — the click should feel physical
 - cards marked `interactive` lift 1px and darken their border on hover

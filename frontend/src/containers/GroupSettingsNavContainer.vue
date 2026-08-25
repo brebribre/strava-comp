@@ -24,7 +24,7 @@ const items = [
         :class="[
           'whitespace-nowrap rounded-md px-3 py-2 text-sm transition-colors duration-(--duration-quick)',
           isActive
-            ? 'bg-raised font-medium text-ink'
+            ? 'bg-accent-soft font-medium text-accent'
             : 'text-ink-muted hover:bg-raised hover:text-ink',
         ]"
         @click="navigate"

@@ -68,12 +68,25 @@ async function handleLogout() {
         :class="[
           'mb-3 block w-full rounded-md px-3 py-2 text-left text-sm transition-colors duration-(--duration-quick)',
           route.name === 'recap' || route.name === 'recap-sport'
-            ? 'bg-raised font-medium text-ink'
+            ? 'bg-accent-soft font-medium text-accent'
             : 'text-ink-muted hover:bg-raised hover:text-ink',
         ]"
         @click="router.push({ name: 'recap' })"
       >
         Recap
+      </button>
+
+      <button
+        :class="[
+          'mb-3 block w-full rounded-md px-3 py-2 text-left text-sm',
+          'transition-colors duration-(--duration-quick)',
+          route.name === 'appearance'
+            ? 'bg-accent-soft font-medium text-accent'
+            : 'text-ink-muted hover:bg-raised hover:text-ink',
+        ]"
+        @click="router.push({ name: 'appearance' })"
+      >
+        Appearance
       </button>
 
       <p class="px-2 py-1 text-[11px] font-medium uppercase tracking-wider text-ink-subtle">Groups</p>
@@ -82,7 +95,13 @@ async function handleLogout() {
       <button
         v-for="group in groups"
         :key="group.id"
-        :class="[ 'mb-1 block w-full truncate rounded-lg px-3 py-2 text-left text-sm transition', Number(route.params.id) === group.id ? 'bg-raised font-medium text-ink' : 'text-ink hover:bg-raised ', ]"
+        :class="[
+          'mb-1 block w-full truncate rounded-md px-3 py-2 text-left text-sm',
+          'transition-colors duration-(--duration-quick)',
+          Number(route.params.id) === group.id
+            ? 'bg-accent-soft font-medium text-accent'
+            : 'text-ink-muted hover:bg-raised hover:text-ink',
+        ]"
         @click="openGroup(group.id)"
       >
         {{ group.name }}

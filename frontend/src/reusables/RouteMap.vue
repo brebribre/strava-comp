@@ -12,7 +12,7 @@ const dense = computed(() => (props.path.match(/L/g)?.length ?? 0) > 300)
        free of a map library and inherits the monochrome palette. -->
   <svg
     :viewBox="`0 0 ${width ?? 600} ${height ?? 320}`"
-    class="h-full w-full rounded-md bg-raised text-ink"
+    class="h-full w-full rounded-md bg-raised text-accent"
     preserveAspectRatio="xMidYMid meet"
   >
     <!-- Semi-transparent so repeated passes over the same ground accumulate and read as

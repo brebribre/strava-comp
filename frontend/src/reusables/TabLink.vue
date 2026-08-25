@@ -12,7 +12,7 @@ defineProps<{ to: RouteLocationRaw; label: string }>()
       :href="href"
       :class="[
         'relative px-1 pb-2.5 text-sm transition-colors duration-(--duration-quick)',
-        isActive ? 'font-medium text-ink' : 'text-ink-subtle hover:text-ink-muted',
+        isActive ? 'font-medium text-accent' : 'text-ink-subtle hover:text-ink-muted',
       ]"
       @click="navigate"
     >
@@ -20,7 +20,7 @@ defineProps<{ to: RouteLocationRaw; label: string }>()
       <!-- The underline scales in from the centre rather than appearing. -->
       <span
         :class="[
-          'absolute inset-x-0 bottom-0 h-px origin-center bg-ink',
+          'absolute inset-x-0 bottom-0 h-px origin-center bg-accent',
           'transition-transform duration-(--duration-soft) ease-(--ease-out-soft)',
           isActive ? 'scale-x-100' : 'scale-x-0',
         ]"

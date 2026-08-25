@@ -13,7 +13,7 @@ defineEmits<{ toggle: [] }>()
       'inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium',
       'transition-all duration-(--duration-quick) ease-(--ease-out-soft) active:scale-[0.97]',
       active
-        ? 'border-ink bg-ink text-ink-inverse'
+        ? 'border-accent bg-accent text-accent-contrast'
         : 'border-line text-ink-muted hover:border-line-strong hover:text-ink',
     ]"
     @click="$emit('toggle')"

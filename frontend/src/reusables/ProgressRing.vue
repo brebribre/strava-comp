@@ -34,7 +34,7 @@ const offset = computed(() => circumference.value * (1 - Math.min(props.percent,
         stroke-linecap="round"
         :stroke-dasharray="circumference"
         :stroke-dashoffset="offset"
-        class="stroke-ink transition-[stroke-dashoffset] duration-700 ease-(--ease-out-soft)"
+        class="stroke-accent transition-[stroke-dashoffset] duration-700 ease-(--ease-out-soft)"
         :class="complete ? '' : 'opacity-55'"
       />
     </svg>
