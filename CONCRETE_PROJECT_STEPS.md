@@ -411,6 +411,15 @@ table, chart, avatar, stat row, tab link, empty state); hooks (`useAuth`, `useGr
 The group page has tabs: **Feed** (Strava-style timeline — every member's activities grouped by
 day, with avatars, sport badges and per-sport stats), **Summary**, **Target** and **Settings**.
 
+The group has three tabs — **Summary** (default), **Feed**, **Settings**. Summary leads with
+the target widget, then a **weekly record**: one row per member showing weeks hit vs weeks
+missed over the last 12 weeks, ranked by record. The current week counts as a hit once it's
+reached, but never as a miss while it's still open — otherwise every Monday would look like a
+loss for everyone. Backed by `GET /groups/{id}/target/history`, which divides a monthly or
+yearly target down to a weekly figure so the bar means "on pace".
+
+Settings has its own nav: **Members**, **Target**, **Notifications**.
+
 The **Feed leads with the target widget** — the same progress ring and headline as the Target
 tab, minus the edit button, and silent when no target is set. Both routes render one
 `TargetHeroContainer`, differing only by props.

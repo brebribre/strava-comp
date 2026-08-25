@@ -3,21 +3,24 @@ import { useRoute } from 'vue-router'
 
 import { useTargetHistory } from '@/hooks/useTargetHistory'
 import AppAlert from '@/reusables/AppAlert.vue'
+import AppAvatar from '@/reusables/AppAvatar.vue'
 import AppCard from '@/reusables/AppCard.vue'
 import ProgressBar from '@/reusables/ProgressBar.vue'
 import SportLoader from '@/reusables/SportLoader.vue'
+import { useFormat } from '@/hooks/useFormat'
 
 const route = useRoute()
-const { rows, targetCount, weeksHit, hasTarget, isLoading, error } = useTargetHistory(
+const { rows, targetCount, weeksCounted, hasTarget, isLoading, error } = useTargetHistory(
   () => Number(route.params.id),
 )
+const { initials } = useFormat()
 </script>
 
 <template>
-  <AppCard v-if="hasTarget" title="Week by week">
+  <AppCard v-if="hasTarget" title="Weekly record">
     <template #actions>
       <span class="text-xs text-ink-subtle">
-        {{ weeksHit }} of {{ rows.length }} weeks hit · target {{ targetCount }}/week
+        last {{ weeksCounted }} weeks · target {{ targetCount }}/week
       </span>
     </template>
 
@@ -27,36 +30,29 @@ const { rows, targetCount, weeksHit, hasTarget, isLoading, error } = useTargetHi
     <ul v-else class="divide-y divide-line">
       <li
         v-for="row in rows"
-        :key="row.key"
-        class="flex flex-wrap items-center gap-x-4 gap-y-2 py-2.5 first:pt-0 last:pb-0"
+        :key="row.athlete_id"
+        class="flex flex-wrap items-center gap-x-4 gap-y-2 py-3 first:pt-0 last:pb-0"
       >
-        <span
-          class="w-32 shrink-0 text-xs"
-          :class="row.isCurrent ? 'font-medium text-ink' : 'text-ink-muted'"
-        >
-          {{ row.label }}
-        </span>
+        <AppAvatar :initials="initials(row.name)" />
 
-        <ProgressBar
-          v-if="row.mine"
-          :percent="row.mine.percent"
-          :complete="row.mine.isComplete"
-          class="min-w-24 flex-1"
-        />
+        <div class="min-w-0 flex-1">
+          <p class="truncate text-sm font-medium text-ink">{{ row.name }}</p>
+          <p class="text-xs text-ink-subtle">
+            <span class="text-ink">{{ row.succeeded }} hit</span>
+            ·
+            {{ row.failed }} missed
+            <template v-if="row.isCurrentWeekOpen">
+              · this week open ({{ row.completedThisWeek }}/{{ targetCount }})
+            </template>
+          </p>
+        </div>
 
-        <span class="w-12 shrink-0 text-right text-xs tabular-nums text-ink">
-          {{ row.mine?.completed ?? 0 }}/{{ row.targetCount }}
-        </span>
-
-        <!-- Everyone else, compact: enough to see who showed up that week. -->
-        <span v-if="row.others.length" class="w-full text-xs text-ink-subtle sm:w-auto">
-          <span v-for="other in row.others" :key="other.athlete_id" class="mr-3">
-            {{ other.name.split(' ')[0] }}
-            <span :class="other.is_complete ? 'font-medium text-ink' : ''">
-              {{ other.completed }}/{{ row.targetCount }}
-            </span>
-          </span>
-        </span>
+        <!-- Full width below the name on phones: a fixed-width bar beside the text squeezes
+             the name into an ellipsis at 375px. -->
+        <div class="flex w-full items-center gap-3 sm:w-40 sm:shrink-0">
+          <ProgressBar :percent="row.percent" :complete="row.percent === 100" class="flex-1" />
+          <span class="w-9 text-right text-xs tabular-nums text-ink-muted">{{ row.percent }}%</span>
+        </div>
       </li>
     </ul>
   </AppCard>

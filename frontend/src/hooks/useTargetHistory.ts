@@ -2,22 +2,22 @@ import { computed, ref, watch } from 'vue'
 
 import { useGroupApi } from '@/api/useGroupApi'
 import { ApiError } from '@/api/request'
-import { useAuth } from '@/hooks/useAuth'
 import type { TargetWeek } from '@/types/api'
 
-export interface WeekRow {
-  key: string
-  label: string
-  isCurrent: boolean
-  targetCount: number
-  mine: { completed: number; percent: number; isComplete: boolean } | null
-  others: { athlete_id: number; name: string; completed: number; is_complete: boolean }[]
+export interface MemberRecord {
+  athlete_id: number
+  name: string
+  succeeded: number
+  failed: number
+  /** True when the current week is still open and not yet hit — neither a win nor a loss. */
+  isCurrentWeekOpen: boolean
+  completedThisWeek: number
+  percent: number
 }
 
 /** Week-by-week progress against the group's target, newest first. */
 export function useTargetHistory(groupId: () => number, weeks = 12) {
   const api = useGroupApi()
-  const { athlete } = useAuth()
 
   const history = ref<TargetWeek[]>([])
   const targetCount = ref(0)
@@ -48,42 +48,59 @@ export function useTargetHistory(groupId: () => number, weeks = 12) {
     }
   }
 
-  function weekLabel(week: TargetWeek): string {
-    const start = new Date(week.week_start)
-    const end = new Date(week.week_end)
-    end.setDate(end.getDate() - 1)
-    const fmt = (d: Date) =>
-      d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', timeZone: 'UTC' })
-    return `${fmt(start)} – ${fmt(end)}`
-  }
+  /**
+   * One row per member: weeks hit versus weeks missed.
+   *
+   * The current week is deliberately excluded from both tallies unless it's already been
+   * hit — it's still in progress, and counting an unfinished week as a failure would make
+   * every Monday look like a loss.
+   */
+  const rows = computed<MemberRecord[]>(() => {
+    const weeks = history.value
+    if (!weeks.length) return []
 
-  const rows = computed<WeekRow[]>(() =>
-    history.value.map((week) => {
-      const mine = week.members.find((m) => m.athlete_id === athlete.value?.athlete_id)
-      return {
-        key: week.week_start,
-        label: week.is_current ? 'This week' : weekLabel(week),
-        isCurrent: week.is_current,
-        targetCount: week.target_count,
-        mine: mine
-          ? { completed: mine.completed, percent: mine.percent, isComplete: mine.is_complete }
-          : null,
-        others: week.members
-          .filter((m) => m.athlete_id !== athlete.value?.athlete_id)
-          .map((m) => ({
-            athlete_id: m.athlete_id,
-            name: m.name,
-            completed: m.completed,
-            is_complete: m.is_complete,
-          })),
+    return weeks[0].members.map((member) => {
+      let succeeded = 0
+      let failed = 0
+      let isCurrentWeekOpen = false
+      let completedThisWeek = 0
+
+      for (const week of weeks) {
+        const entry = week.members.find((m) => m.athlete_id === member.athlete_id)
+        if (!entry) continue
+
+        if (week.is_current) {
+          completedThisWeek = entry.completed
+          if (entry.is_complete) succeeded += 1
+          else isCurrentWeekOpen = true
+          continue
+        }
+
+        if (entry.is_complete) succeeded += 1
+        else failed += 1
       }
-    }),
+
+      const decided = succeeded + failed
+      return {
+        athlete_id: member.athlete_id,
+        name: member.name,
+        succeeded,
+        failed,
+        isCurrentWeekOpen,
+        completedThisWeek,
+        percent: decided ? Math.round((succeeded / decided) * 100) : 0,
+      }
+    })
+  })
+
+  // Best record first — the whole point is comparing.
+  const ranked = computed(() =>
+    [...rows.value].sort((a, b) => b.succeeded - a.succeeded || a.failed - b.failed),
   )
 
-  /** How many of the shown weeks the athlete actually hit — the headline for the widget. */
-  const weeksHit = computed(() => rows.value.filter((r) => r.mine?.isComplete).length)
+  const weeksCounted = computed(() => history.value.length)
 
   watch(groupId, refresh, { immediate: true })
 
-  return { rows, targetCount, weeksHit, hasTarget, isLoading, error, refresh }
+  return { rows: ranked, targetCount, weeksCounted, hasTarget, isLoading, error, refresh }
 }
