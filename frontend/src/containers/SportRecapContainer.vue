@@ -11,6 +11,7 @@ import BarChart from '@/reusables/BarChart.vue'
 import EmptyState from '@/reusables/EmptyState.vue'
 import LineChart from '@/reusables/LineChart.vue'
 import SportLoader from '@/reusables/SportLoader.vue'
+import SportZonesContainer from '@/containers/SportZonesContainer.vue'
 import StatTile from '@/reusables/StatTile.vue'
 
 const route = useRoute()
@@ -97,6 +98,8 @@ const windows = [
           </p>
           <LineChart :data="performanceChart" :options="performanceOptions" />
         </AppCard>
+
+        <SportZonesContainer :sport="sport" :months="months" />
 
         <AppCard v-if="recap.bests.length" title="Personal bests">
           <ul class="divide-y divide-line">

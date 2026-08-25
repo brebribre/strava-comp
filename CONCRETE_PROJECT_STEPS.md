@@ -522,6 +522,28 @@ Two decisions worth keeping:
   reversed so improvement always points up. Pace falling while HR holds or drops is the single
   clearest picture of getting fitter — and it only reads that way overlaid.
 
+### Effort zones (why heart rate, not workout types)
+
+The obvious categorisation — interval / threshold / long / easy — turned out to be
+unsupportable, and the data said so:
+
+| Signal | Coverage across 115 runs |
+|---|---|
+| Strava's `workout_type` tag | **0 tagged** (114 null, 1 "default") — it's only set manually |
+| `splits_metric` / `laps` (needed to detect intervals) | **7** — only enriched activities have them |
+| Average heart rate | **101** |
+
+So runs are bucketed by **average heart rate as a percentage of an estimated maximum**
+(standard five zones: Recovery / Easy / Steady / Threshold / Hard). It covers 88% of runs, and
+**pace at a fixed effort is a better definition of improvement** than counting sessions by type.
+
+The max is estimated, since reading Strava's configured zones needs `profile:read_all`, which
+this app doesn't request: the 95th percentile of recorded maximums (robust against a single
+sensor spike), falling back to the hardest average scaled up, then to a generic default.
+
+Known limitation: a true interval session averages out to Z3/Z4 and is indistinguishable from
+a tempo run. Fixing that means enriching every run for split data (~1 API call each).
+
 ✅ **Checkpoint:** each sport's growth is visible over months.
 *(verified: 26 checks — growth maths, baseline suppression, pace vs speed per sport family,
 bests selection, consistency, empty sports, auth. Live: 14 months of real running shows pace

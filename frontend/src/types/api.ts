@@ -261,3 +261,39 @@ export interface SportRecap {
   bests: BestEffort[]
   consistency: Consistency
 }
+
+export interface ZoneBucket {
+  zone: number
+  label: string
+  low_pct: number
+  high_pct: number
+  low_bpm: number
+  high_bpm: number
+  activity_count: number
+  distance: number
+  moving_time: number
+  avg_heartrate: number | null
+  avg_pace_seconds_per_km: number | null
+  previous_activity_count: number
+  previous_avg_pace_seconds_per_km: number | null
+  pace_delta_seconds: number | null
+}
+
+export interface ZoneMonthPoint {
+  month: string
+  zone: number
+  activity_count: number
+  avg_pace_seconds_per_km: number | null
+}
+
+export interface ZoneRecap {
+  sport_type: string
+  since: string
+  until: string
+  hr_max: number
+  hr_max_basis: string
+  zones: ZoneBucket[]
+  months: ZoneMonthPoint[]
+  classified_count: number
+  unclassified_count: number
+}

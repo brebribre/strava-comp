@@ -66,6 +66,10 @@ def seed() -> None:
         # Older than both windows: establishes that history covers the comparison period,
         # which is what makes growth meaningful.
         session.add(activity(8000, 200, "Run", km=4, minutes=30, hr=172))
+        # Same effort band as the current window's runs, so zone pace has a baseline to
+        # improve against.
+        session.add(activity(8010, 220, "Run", km=8, minutes=56, hr=158))
+        session.add(activity(8011, 260, "Run", km=8, minutes=57, hr=157))
         # Previous 90-day window: two slow runs.
         session.add(activity(8001, 150, "Run", km=5, minutes=35, hr=170))
         session.add(activity(8002, 120, "Run", km=5, minutes=35, hr=170))
@@ -106,7 +110,7 @@ def main() -> None:
 
             print("\nsport recap")
             run = recap.sport_recap(session, ATHLETE_ID, "Run", months=12)
-            check("totals", run.totals.activity_count == 7)
+            check("totals", run.totals.activity_count == 9)
             check("monthly points returned", len(run.months) >= 2, f"{len(run.months)} months")
             check("pace computed for a foot sport",
                   all(m.avg_pace_seconds_per_km is not None for m in run.months if m.distance > 100))
@@ -138,6 +142,41 @@ def main() -> None:
             check("no bests", empty.bests == [])
             check("consistency degrades gracefully", empty.consistency.active_weeks == 0)
 
+        print("\neffort zones")
+        with Session(engine) as session:
+            from app.services import zones as zones_service
+
+            hr_max, basis = zones_service.estimate_hr_max(session, ATHLETE_ID)
+            check("hr max estimated from history", hr_max > 0, f"{hr_max} bpm ({basis})")
+
+            z = zones_service.zone_recap(session, ATHLETE_ID, "Run", months=6)
+            by_zone = {bucket.zone: bucket for bucket in z.zones}
+            check("runs bucketed by heart rate", len(by_zone) >= 2, str(sorted(by_zone)))
+            check("every classified run lands in exactly one zone",
+                  sum(b.activity_count for b in z.zones) == z.classified_count)
+            check("zone bpm ranges derived from max",
+                  all(b.low_bpm < b.high_bpm for b in z.zones))
+            check("pace computed per zone",
+                  all(b.avg_pace_seconds_per_km for b in z.zones if b.distance > 1000))
+            check("monthly points carry a zone",
+                  all(m.zone in by_zone for m in z.months))
+
+            # The seeded runs get faster at a similar effort, so at least one zone should
+            # show a negative (improving) delta against the previous period.
+            deltas = [b.pace_delta_seconds for b in z.zones if b.pace_delta_seconds is not None]
+            check("pace delta computed against the previous period", bool(deltas), str(deltas))
+
+        print("\nzones without heart rate")
+        with Session(engine) as session:
+            session.exec(
+                delete(Activity).where(Activity.owner_id == ATHLETE_ID, Activity.id == 8007)
+            )
+            session.add(activity(8100, 3, "Swim", km=1, minutes=30, hr=None))
+            session.commit()
+            z = zones_service.zone_recap(session, ATHLETE_ID, "Swim", months=6)
+            check("unclassified counted", z.unclassified_count == 1)
+            check("no zones invented", z.zones == [])
+
         print("\napi")
         client = TestClient(app)
         client.cookies.set(settings.session_cookie_name, create_session_token(ATHLETE_ID))
@@ -145,6 +184,8 @@ def main() -> None:
         check("overview 200", r.status_code == 200)
         r = client.get("/recap/Run", params={"months": 12})
         check("sport 200", r.status_code == 200 and r.json()["sport_type"] == "Run")
+        r = client.get("/recap/Run/zones", params={"months": 12})
+        check("zones 200", r.status_code == 200 and r.json()["hr_max"] > 0)
         check("days bounds enforced", client.get("/recap", params={"days": 1}).status_code == 422)
 
         anon = TestClient(app)
