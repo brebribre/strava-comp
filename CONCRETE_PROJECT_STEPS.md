@@ -362,7 +362,7 @@ logged-out visit redirects to Strava.)*
 ## Phase 8b: Group Targets ✅ DONE (added beyond the original plan)
 
 A group can set a shared training target: **N qualifying exercises per week / month / year,
-until a given date**, with per-sport rules for what counts as an exercise.
+from a start date until an end date**, with per-sport rules for what counts as an exercise.
 
 Model: `group_targets`, keyed by `group_id` (one target per group, so saving replaces rather
 than accumulating). Rules live in a JSONB column, so adding a sport or a new kind of threshold
@@ -378,16 +378,33 @@ Endpoints (all members-only):
 - `GET /groups/{id}/target`, `PUT` to set/replace, `DELETE` to remove — 404 when unset
 - `GET /groups/{id}/target/progress` — every member's count for the **current** period,
   furthest-ahead first, with `remaining`, `percent` (capped at 100), `days_left_in_period`,
-  `periods_remaining` and `is_expired`
+  `periods_remaining`, `is_expired` and `is_pending`
+
+**Start date** (`starts_at`, added later via Alembic — the first migration after the baseline).
+It scopes *scoring*, not visibility:
+- Activities before it never count, even ones inside the current period.
+- Weeks before it come back `in_scope: false` from the history endpoint and are skipped by the
+  weekly record — nobody "failed" a target that did not exist yet.
+- A start date in the future makes the target `is_pending`: it shows in the UI, counts nothing.
+- Omitting it on write means **the start of the current period**, not "this instant" — a weekly
+  target set on Wednesday should still credit Monday's session. A check caught the stricter
+  reading here and it was changed deliberately.
+- Telegram announcements are *not* scoped by it: the rules decide the bar, the start date
+  decides the score, and silencing the group for a week would be surprising.
+
+The migration adds the column nullable, backfills existing targets from `created_at`, then sets
+NOT NULL — autogenerate's straight `nullable=False` would fail on any table that has rows.
 
 Frontend: **Target** tab shows the logged-in athlete's standing as a big progress ring plus a
 table of everyone else; **Settings** tab (also reachable from Manage groups) edits the target.
 
 ✅ **Checkpoint:** targets are stored, enforced consistently, and visible per member.
-*(verified: 45 checks — qualification incl. time-or-distance, exactly-at-threshold, unknown
+*(verified: 56 checks — qualification incl. time-or-distance, exactly-at-threshold, unknown
 sports, null sport_type; period maths incl. leap February and December rollover; replace-not-
-duplicate; over-achievement clamping; expiry; 403/401 access control; delete. Live: set 4/week
-via the UI, edited to 6/week, ring and table updated.)*
+duplicate; over-achievement clamping; expiry; start date defaulting, clamping, pending and
+week-scoping; `until` before `starts_at` rejected; 403/401 access control; delete. Live: set
+4/week via the UI, edited to 6/week, ring and table updated; a future start date renders "This
+target has not started yet" and the weekly record drops to 0 weeks.)*
 
 ---
 

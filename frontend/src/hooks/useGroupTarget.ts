@@ -50,6 +50,7 @@ export function useGroupTarget(groupId: () => number, myAthleteId: () => number 
   const headline = computed(() => {
     if (!progress.value || !me.value) return ''
     if (progress.value.is_expired) return 'This target has ended'
+    if (progress.value.is_pending) return 'This target has not started yet'
     if (me.value.is_complete) return `Target hit ${periodLabel.value}`
     const remaining = me.value.remaining
     return `${remaining} more to go ${periodLabel.value}`

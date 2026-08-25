@@ -9,7 +9,8 @@ import SportLoader from '@/reusables/SportLoader.vue'
 
 const route = useRoute()
 const groupId = () => Number(route.params.id)
-const { form, exists, isLoading, isSaving, saved, error, save, remove } = useTargetForm(groupId)
+const { form, exists, isLoading, isSaving, saved, error, windowError, save, remove } =
+  useTargetForm(groupId)
 
 
 const periods = [
@@ -65,19 +66,37 @@ async function handleSave() {
             </div>
           </div>
 
-          <label class="block">
-            <span class="mb-1 block text-sm font-medium text-ink">
-              Until
-            </span>
-            <input
-              v-model="form.until"
-              type="date"
-              class="px-3 py-2 rounded-md border border-line bg-surface text-sm text-ink outline-none placeholder:text-ink-subtle transition-colors duration-(--duration-quick) focus:border-ink disabled:opacity-40"
-            />
-            <span class="mt-1 block text-xs text-ink-muted">
-              The target stops applying after this date.
-            </span>
-          </label>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <label class="block">
+              <span class="mb-1 block text-sm font-medium text-ink">
+                From
+              </span>
+              <input
+                v-model="form.startsAt"
+                type="date"
+                class="w-full px-3 py-2 rounded-md border border-line bg-surface text-sm text-ink outline-none placeholder:text-ink-subtle transition-colors duration-(--duration-quick) focus:border-ink disabled:opacity-40"
+              />
+              <span class="mt-1 block text-xs text-ink-muted">
+                Weeks before this date don't count for or against anyone.
+              </span>
+            </label>
+
+            <label class="block">
+              <span class="mb-1 block text-sm font-medium text-ink">
+                Until
+              </span>
+              <input
+                v-model="form.until"
+                type="date"
+                class="w-full px-3 py-2 rounded-md border border-line bg-surface text-sm text-ink outline-none placeholder:text-ink-subtle transition-colors duration-(--duration-quick) focus:border-ink disabled:opacity-40"
+              />
+              <span class="mt-1 block text-xs text-ink-muted">
+                The target stops applying after this date.
+              </span>
+            </label>
+          </div>
+
+          <p v-if="windowError" class="text-xs text-ink-muted">{{ windowError }}</p>
         </div>
       </AppCard>
 

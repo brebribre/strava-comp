@@ -53,7 +53,8 @@ export function useTargetHistory(groupId: () => number, weeks = 12) {
    *
    * The current week is deliberately excluded from both tallies unless it's already been
    * hit — it's still in progress, and counting an unfinished week as a failure would make
-   * every Monday look like a loss.
+   * every Monday look like a loss. Weeks outside the target's own window are skipped
+   * entirely: nobody failed a target that hadn't started yet.
    */
   const rows = computed<MemberRecord[]>(() => {
     const weeks = history.value
@@ -66,6 +67,7 @@ export function useTargetHistory(groupId: () => number, weeks = 12) {
       let completedThisWeek = 0
 
       for (const week of weeks) {
+        if (!week.in_scope) continue
         const entry = week.members.find((m) => m.athlete_id === member.athlete_id)
         if (!entry) continue
 
@@ -98,7 +100,7 @@ export function useTargetHistory(groupId: () => number, weeks = 12) {
     [...rows.value].sort((a, b) => b.succeeded - a.succeeded || a.failed - b.failed),
   )
 
-  const weeksCounted = computed(() => history.value.length)
+  const weeksCounted = computed(() => history.value.filter((week) => week.in_scope).length)
 
   watch(groupId, refresh, { immediate: true })
 

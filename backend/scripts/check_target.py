@@ -213,6 +213,64 @@ def main() -> None:
         check("past `until` is flagged expired", r.json()["is_expired"] is True)
         check("expired target reports no periods remaining", r.json()["periods_remaining"] == 0)
 
+        print("\napi: start date")
+        alice.put(f"/groups/{group_id}/target", json=payload)
+        r = alice.get(f"/groups/{group_id}/target")
+        started = datetime.fromisoformat(r.json()["starts_at"])
+        check("an omitted start date defaults to the start of the period",
+              started == period_bounds("week", datetime.now(UTC))[0], str(started))
+        check("so activities earlier in the period still count",
+              {m["athlete_id"]: m for m in
+               alice.get(f"/groups/{group_id}/target/progress").json()["members"]
+               }[ALICE_ID]["completed"] == 3)
+
+        check("until before starts_at rejected",
+              alice.put(
+                  f"/groups/{group_id}/target",
+                  json={**payload, "starts_at": (now + timedelta(days=100)).isoformat()},
+              ).status_code == 422,
+              "until is only 90 days out")
+
+        week_start = period_bounds("week", now)[0]
+        # Every seeded activity sits at Monday noon; starting after that must discount them
+        # even though they are inside the current period.
+        alice.put(
+            f"/groups/{group_id}/target",
+            json={**payload, "starts_at": (week_start + timedelta(hours=12, minutes=1)).isoformat()},
+        )
+        r = alice.get(f"/groups/{group_id}/target/progress")
+        by_id = {m["athlete_id"]: m for m in r.json()["members"]}
+        check("activities before the start date do not count", by_id[ALICE_ID]["completed"] == 0,
+              "same period, but earlier than starts_at")
+
+        alice.put(f"/groups/{group_id}/target", json={**payload, "starts_at": week_start.isoformat()})
+        r = alice.get(f"/groups/{group_id}/target/progress")
+        by_id = {m["athlete_id"]: m for m in r.json()["members"]}
+        check("starting at the period start counts them again", by_id[ALICE_ID]["completed"] == 3)
+        check("a started target is not pending", r.json()["is_pending"] is False)
+
+        alice.put(
+            f"/groups/{group_id}/target",
+            json={**payload, "starts_at": (now + timedelta(days=2)).isoformat()},
+        )
+        r = alice.get(f"/groups/{group_id}/target/progress")
+        check("a future start date is flagged pending", r.json()["is_pending"] is True)
+        check("a pending target counts nothing yet",
+              all(m["completed"] == 0 for m in r.json()["members"]))
+
+        alice.put(
+            f"/groups/{group_id}/target",
+            json={**payload, "starts_at": (week_start - timedelta(weeks=2)).isoformat()},
+        )
+        h = alice.get(f"/groups/{group_id}/target/history", params={"weeks": 6}).json()
+        check("weeks inside the window are in scope", h["weeks"][0]["in_scope"] is True)
+        check("weeks before the start date are out of scope", h["weeks"][5]["in_scope"] is False,
+              "not failures — the target did not exist yet")
+        check("exactly the covered weeks are in scope",
+              sum(1 for w in h["weeks"] if w["in_scope"]) == 3, "started two weeks ago")
+
+        alice.put(f"/groups/{group_id}/target", json=payload)
+
         print("\nweekly history")
         r = alice.get(f"/groups/{group_id}/target/history", params={"weeks": 6})
         check("200", r.status_code == 200, str(r.json())[:150])

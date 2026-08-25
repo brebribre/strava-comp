@@ -54,10 +54,13 @@ function openSettings() {
       <div class="text-center sm:text-left">
         <p class="text-xl font-bold tracking-tight text-ink">{{ headline }}</p>
         <p class="mt-2 text-sm text-ink-muted">
-          {{ progress.target.count }} exercises per {{ progress.target.period }} · until
-          {{ utcDate(progress.target.until) }}
+          {{ progress.target.count }} exercises per {{ progress.target.period }} ·
+          {{ utcDate(progress.target.starts_at) }} – {{ utcDate(progress.target.until) }}
         </p>
-        <p class="mt-1 text-sm text-ink-muted">
+        <p v-if="progress.is_pending" class="mt-1 text-sm text-ink-muted">
+          Starts {{ utcDate(progress.target.starts_at) }} — nothing counts until then.
+        </p>
+        <p v-else class="mt-1 text-sm text-ink-muted">
           {{ progress.days_left_in_period }} day{{ progress.days_left_in_period === 1 ? '' : 's' }}
           left in this {{ progress.target.period }} ·
           {{ progress.periods_remaining }} {{ progress.target.period

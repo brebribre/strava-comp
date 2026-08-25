@@ -168,6 +168,10 @@ export function useGroupApi() {
 - `useAuthStore` holds the current athlete. The guard resolves it (calling `/me` on first
   load), and redirects to `/login` when the backend answers `401`.
 - Routes opt out with `meta: { public: true }` (the login page and the OAuth landing).
+- **Where a login lands:** a plain login goes to `/recap` — the personal page is the more
+  useful home than a list of groups. Arriving via an invite link (`?login=ok&group=<id>`)
+  overrides that and lands in the group that was just joined. `/` and unknown paths also
+  resolve to `/recap`, so the landing is the same however the app is opened.
 - Because the session is an **HttpOnly cookie, JS can never read it** — "am I logged in?"
   is always answered by `/me` returning 200 vs 401, never by inspecting storage.
 
@@ -238,7 +242,7 @@ never a token in JS. The backend must list the frontend's origin in `FRONTEND_OR
 | `GET /activities/{id}` | One activity in full: description, calories, splits, GPS polyline |
 | `GET /recap?days=365` | Personal per-sport totals with growth vs the previous period |
 | `GET /recap/{sport}?months=12` | One sport: monthly trend, bests, consistency |
-| `GET/PUT/DELETE /groups/{id}/target` | The group's training target |
+| `GET/PUT/DELETE /groups/{id}/target` | The group's training target — `count`/`period`, `starts_at`–`until`, per-sport rules |
 | `GET /groups/{id}/target/progress` | Every member's progress against it, current period |
 | `POST /activities/sync?days=7` | Manual re-sync |
 
@@ -416,8 +420,9 @@ work, mint a session cookie instead — print one from the backend venv with
 2. **Duplicated `/groups` fetch** — `SidebarContainer` and `GroupListContainer` each call
    `useGroups()`, so both fetch on mount. Harmless now; the fix is a groups store, once
    question 1 is settled.
-3. **Where does the OAuth redirect land?** Currently `FRONTEND_ORIGIN` + `?login=ok`, handled
-   by the `/login` route, whose guard forwards an authenticated athlete on to `/groups`.
+3. **Where does the OAuth redirect land?** `FRONTEND_ORIGIN` + `?login=ok`, handled by the
+   `/login` route, whose guard forwards an authenticated athlete on to `/recap` — or to the
+   joined group when the invite flow added `&group=<id>`.
 4. **Maps** — activity routes are drawn as a plain SVG path from the decoded polyline
    (`usePolyline` + `RouteMap`), with no tile layer and no map library. Dense traces
    (court sports, laps) switch to a thin semi-transparent stroke so overlapping passes read

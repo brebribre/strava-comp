@@ -22,7 +22,7 @@ const router = createRouter({
       path: '/',
       component: () => import('@/views/SidebarView.vue'),
       children: [
-        { path: '', redirect: { name: 'groups' } },
+        { path: '', redirect: { name: 'recap' } },
         {
           path: 'recap',
           name: 'recap',
@@ -91,7 +91,7 @@ const router = createRouter({
         },
       ],
     },
-    { path: '/:pathMatch(.*)*', redirect: { name: 'groups' } },
+    { path: '/:pathMatch(.*)*', redirect: { name: 'recap' } },
   ],
 })
 
@@ -119,14 +119,16 @@ router.beforeEach(async (to) => {
    */
   if (athlete && to.query.login === 'ok') {
     const joined = Number(to.query.group)
+    // Followed an invite link: land in the group they just joined. Otherwise a plain login
+    // goes to the personal recap, which is the more useful home page.
     return Number.isFinite(joined) && joined > 0
       ? { name: 'group-feed', params: { id: joined } }
-      : { name: 'groups' }
+      : { name: 'recap' }
   }
 
   // Already logged in but sitting on the login page — nothing to do here.
   if (to.name === 'login' && athlete) {
-    return { name: 'groups' }
+    return { name: 'recap' }
   }
   return true
 })

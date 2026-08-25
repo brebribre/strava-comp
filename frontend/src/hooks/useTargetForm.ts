@@ -1,4 +1,4 @@
-import { reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 
 import { useGroupApi } from '@/api/useGroupApi'
 import { ApiError } from '@/api/request'
@@ -32,6 +32,7 @@ export function useTargetForm(groupId: () => number) {
   const form = reactive({
     count: 4,
     period: 'week' as TargetPeriod,
+    startsAt: '',
     until: '',
     defaultMinMinutes: 30,
     sports: defaultSportRules(),
@@ -49,6 +50,21 @@ export function useTargetForm(groupId: () => number) {
     return date.toISOString().slice(0, 10)
   }
 
+  /** Monday of the current week — the target covers the period it is created in. */
+  function defaultStartsAt(): string {
+    const date = new Date()
+    const isoWeekday = (date.getDay() + 6) % 7
+    date.setDate(date.getDate() - isoWeekday)
+    return date.toISOString().slice(0, 10)
+  }
+
+  /** Validation mirrors the backend: the window has to run forwards. */
+  const windowError = computed(() =>
+    form.startsAt && form.until && form.until <= form.startsAt
+      ? 'The end date has to be after the start date'
+      : null,
+  )
+
   async function load() {
     const id = groupId()
     if (!Number.isFinite(id)) return
@@ -59,6 +75,7 @@ export function useTargetForm(groupId: () => number) {
       exists.value = true
       form.count = target.count
       form.period = target.period
+      form.startsAt = target.starts_at.slice(0, 10)
       form.until = target.until.slice(0, 10)
       form.defaultMinMinutes = target.rules.default_min_minutes
       form.sports = defaultSportRules().map((row) => {
@@ -76,6 +93,7 @@ export function useTargetForm(groupId: () => number) {
       if (err instanceof ApiError && err.status === 404) {
         // No target yet — leave the sensible defaults in place.
         exists.value = false
+        form.startsAt = defaultStartsAt()
         form.until = defaultUntil()
       } else {
         error.value = err instanceof ApiError ? err.message : 'Could not load the target'
@@ -97,13 +115,19 @@ export function useTargetForm(groupId: () => number) {
     return {
       count: form.count,
       period: form.period,
-      // A date input gives a bare date; the target applies through the end of that day.
+      // Date inputs give bare dates: the target runs from the start of its first day
+      // through the end of its last one.
+      starts_at: new Date(`${form.startsAt}T00:00:00Z`).toISOString(),
       until: new Date(`${form.until}T23:59:59Z`).toISOString(),
       rules: { default_min_minutes: form.defaultMinMinutes, sports },
     }
   }
 
   async function save(): Promise<boolean> {
+    if (windowError.value) {
+      error.value = windowError.value
+      return false
+    }
     isSaving.value = true
     error.value = null
     saved.value = false
@@ -126,6 +150,7 @@ export function useTargetForm(groupId: () => number) {
     try {
       await api.deleteTarget(groupId())
       exists.value = false
+      form.startsAt = defaultStartsAt()
       form.until = defaultUntil()
       return true
     } catch (err) {
@@ -138,5 +163,5 @@ export function useTargetForm(groupId: () => number) {
 
   watch(groupId, load, { immediate: true })
 
-  return { form, exists, isLoading, isSaving, saved, error, load, save, remove }
+  return { form, exists, isLoading, isSaving, saved, error, windowError, load, save, remove }
 }

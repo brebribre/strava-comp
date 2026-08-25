@@ -29,6 +29,7 @@ def to_read(target: GroupTarget) -> TargetRead:
         group_id=target.group_id,
         count=target.count,
         period=target.period,
+        starts_at=target.starts_at,
         until=target.until,
         rules=TargetRules.model_validate(target.rules),
         created_at=target.created_at,
@@ -41,18 +42,24 @@ def upsert_target(session: Session, group_id: int, data: TargetWrite) -> GroupTa
     if session.get(Group, group_id) is None:
         raise GroupNotFound(f"no group {group_id}")
 
+    # An omitted start date means "this period" rather than "this instant" — a weekly target
+    # set on Wednesday should still credit Monday's session.
+    starts_at = data.starts_at or period_bounds(data.period, utcnow())[0]
+
     target = session.get(GroupTarget, group_id)
     if target is None:
         target = GroupTarget(
             group_id=group_id,
             count=data.count,
             period=data.period,
+            starts_at=starts_at,
             until=data.until,
             rules=data.rules.model_dump(),
         )
     else:
         target.count = data.count
         target.period = data.period
+        target.starts_at = starts_at
         target.until = data.until
         target.rules = data.rules.model_dump()
         target.updated_at = utcnow()
@@ -136,6 +143,9 @@ def target_progress(session: Session, group: Group, now: datetime | None = None)
 
     rules = TargetRules.model_validate(target.rules)
     period_start, period_end = period_bounds(target.period, now)
+    # A target that starts mid-period only counts activities from its start date, so
+    # yesterday's session doesn't get credited to a target created today.
+    count_from = max(period_start, target.starts_at)
 
     members = session.exec(
         select(Athlete)
@@ -149,7 +159,7 @@ def target_progress(session: Session, group: Group, now: datetime | None = None)
         activities = session.exec(
             select(Activity).where(
                 Activity.owner_id.in_(list(completed)),
-                Activity.start_date >= period_start,
+                Activity.start_date >= count_from,
                 Activity.start_date < period_end,
             )
         ).all()
@@ -183,6 +193,7 @@ def target_progress(session: Session, group: Group, now: datetime | None = None)
         days_left_in_period=max((period_end - now).days, 0),
         periods_remaining=_periods_remaining(target.period, period_end, target.until),
         is_expired=now > target.until,
+        is_pending=now < target.starts_at,
         members=progress,
     )
 
@@ -249,6 +260,8 @@ def target_history(
                 week_start=week_start,
                 week_end=week_end,
                 is_current=index == 0,
+                # The week counts only if it overlaps the target's window at all.
+                in_scope=week_end > target.starts_at and week_start < target.until,
                 target_count=per_week,
                 members=[
                     WeekMemberProgress(

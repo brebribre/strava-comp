@@ -152,12 +152,15 @@ export interface TargetRules {
 export interface TargetWrite {
   count: number
   period: TargetPeriod
+  /** When the target begins. Omitted means the start of the current period. */
+  starts_at?: string
   until: string
   rules: TargetRules
 }
 
 export interface Target extends TargetWrite {
   group_id: number
+  starts_at: string
   created_at: string
   updated_at: string
 }
@@ -180,6 +183,7 @@ export interface TargetProgress {
   days_left_in_period: number
   periods_remaining: number
   is_expired: boolean
+  is_pending: boolean
   members: MemberProgress[]
 }
 
@@ -311,6 +315,8 @@ export interface TargetWeek {
   week_start: string
   week_end: string
   is_current: boolean
+  /** False for weeks outside the target's window — not a failure, just not covered. */
+  in_scope: boolean
   target_count: number
   members: WeekMemberProgress[]
 }

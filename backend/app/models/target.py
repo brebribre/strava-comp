@@ -25,6 +25,9 @@ class GroupTarget(SQLModel, table=True):
     count: int
     period: str  # week | month | year
 
+    # The window the target applies to. Weeks before starts_at are out of scope entirely —
+    # nobody should be marked as having missed a target that didn't exist yet.
+    starts_at: datetime = Field(default_factory=utcnow, sa_column=tz_column(nullable=False))
     # The target stops applying after this date.
     until: datetime = Field(sa_column=tz_column(nullable=False))
 
