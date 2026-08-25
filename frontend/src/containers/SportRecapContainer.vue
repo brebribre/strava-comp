@@ -11,6 +11,7 @@ import BarChart from '@/reusables/BarChart.vue'
 import EmptyState from '@/reusables/EmptyState.vue'
 import LineChart from '@/reusables/LineChart.vue'
 import SportIcon from '@/reusables/SportIcon.vue'
+import PageTitle from '@/reusables/PageTitle.vue'
 import SportLoader from '@/reusables/SportLoader.vue'
 import SportZonesContainer from '@/containers/SportZonesContainer.vue'
 import StatTile from '@/reusables/StatTile.vue'
@@ -26,7 +27,7 @@ const {
   performanceChart, performanceOptions, showsPerformance,
 } = useSportRecap(() => sport.value, () => months.value)
 
-const { km, duration, elevation, heartrate, shortDate } = useFormat()
+const { km, duration, elevation, heartrate, shortDate, sportLabel } = useFormat()
 
 const windows = [
   { months: 6, label: '6 months' },
@@ -55,10 +56,10 @@ const windows = [
     <SportLoader v-else-if="isLoading" :label="`Reading your ${sport} history…`" class="py-12" />
 
     <template v-else-if="recap">
-      <header class="flex items-center gap-3">
-        <SportIcon :sport="recap.sport_type" :size="32" class="text-accent" />
-        <div>
-          <h1 class="text-xl font-bold tracking-tight text-ink">{{ recap.sport_type }}</h1>
+      <header class="flex items-center gap-3 sm:gap-4">
+        <SportIcon :sport="recap.sport_type" :size="40" class="shrink-0 text-accent sm:size-12" />
+        <div class="min-w-0">
+          <PageTitle>{{ sportLabel(recap.sport_type) }}</PageTitle>
           <p class="mt-0.5 text-sm text-ink-muted">
             {{ shortDate(recap.since) }} – {{ shortDate(recap.until) }}
           </p>

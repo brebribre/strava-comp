@@ -9,6 +9,7 @@ import AppButton from '@/reusables/AppButton.vue'
 import AppCard from '@/reusables/AppCard.vue'
 import SportLoader from '@/reusables/SportLoader.vue'
 import AppInput from '@/reusables/AppInput.vue'
+import PageTitle from '@/reusables/PageTitle.vue'
 import EmptyState from '@/reusables/EmptyState.vue'
 
 const router = useRouter()
@@ -51,6 +52,8 @@ async function handleJoin() {
 
 <template>
   <div class="mx-auto max-w-3xl space-y-6">
+    <PageTitle>Groups</PageTitle>
+
     <AppAlert v-if="error" tone="error">{{ error }}</AppAlert>
 
     <div class="grid gap-6 sm:grid-cols-2">

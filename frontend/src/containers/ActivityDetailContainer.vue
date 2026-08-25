@@ -101,7 +101,7 @@ function goBack() {
           </div>
         </header>
 
-        <h1 class="mt-4 text-lg font-bold text-ink">
+        <h1 class="mt-4 text-2xl font-bold tracking-tight text-ink sm:text-3xl">
           {{ activity.name ?? 'Untitled activity' }}
           <span
             v-if="activity.sport_type"

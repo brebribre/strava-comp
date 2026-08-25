@@ -57,6 +57,25 @@ body,
 body {
   background-color: var(--color-canvas);
   color: var(--color-ink);
+
+  /* App-like on a phone, all of it paired with the locked viewport in index.html:
+     no double-tap zoom, no grey flash on tap, no rubber-band past the ends of a scroll
+     area, and no font inflation when a phone is turned sideways. */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Selection stays available in prose and inputs, but dragging a label or a nav item
+   shouldn't start a text selection the way it never does in a native app. */
+button,
+a,
+label,
+nav {
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 /* Entrance motion. Deliberately small: 4px and a fade, never a slide-in show. */

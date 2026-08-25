@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import BottomTabsContainer from '@/containers/BottomTabsContainer.vue'
 import MobileTopBarContainer from '@/containers/MobileTopBarContainer.vue'
 import SidebarContainer from '@/containers/SidebarContainer.vue'
 </script>
@@ -13,6 +14,8 @@ import SidebarContainer from '@/containers/SidebarContainer.vue'
       <main class="flex-1 overflow-y-auto p-4 sm:p-6">
         <router-view />
       </main>
+      <!-- Tab bar on phones only: from lg up the sidebar is always on screen and does this job. -->
+      <BottomTabsContainer class="lg:hidden" />
     </div>
   </div>
 </template>

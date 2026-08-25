@@ -393,9 +393,20 @@ with `Path2D`.
 The app is used on phones as much as laptops, so **mobile is a first-class layout, not an
 afterthought**.
 
-- **Navigation**: below `lg`, the sidebar is an off-canvas drawer with a backdrop, opened
-  from a top bar and closed automatically on navigation. From `lg` up it is static and in
-  flow. State lives in `useUiStore` and is reached through `useSidebar()`.
+- **The phone shell is an app shell, not a page.** Below `lg` there are two fixed pieces and
+  no browser-shaped chrome between them:
+  - a **profile bar** at the top — avatar and first name on the left, a settings button on the
+    right whose menu holds Log out. No navigation lives in it.
+  - a **floating tab bar** at the bottom — Recap and Groups, inset from the edges with rounded
+    corners and its own shadow, sitting above `env(safe-area-inset-bottom)`. A tab owns
+    everything beneath it, so `/recap/Run` keeps Recap lit and `/groups/5/feed` keeps Groups.
+
+  From `lg` up both disappear and the sidebar is static and in flow, doing both jobs.
+- **Zoom is off on phones.** `maximum-scale=1, user-scalable=no, viewport-fit=cover` plus
+  `touch-action: manipulation` and no tap highlight. iOS Safari ignores `user-scalable=no` on
+  purpose, so `main.ts` also refuses Safari's `gesture*` events — that is the part that
+  actually stops a pinch. Scrolling is untouched. This is a deliberate trade: it costs pinch
+  zoom, which is a real accessibility affordance, in exchange for the app feeling installed.
 - **No horizontal page scroll, ever.** Wide content (tables, charts) scrolls inside its own
   `overflow-x-auto` container. Check with
   `document.documentElement.scrollWidth === window.innerWidth`.
@@ -404,6 +415,10 @@ afterthought**.
   row) is `hidden sm:inline` rather than wrapping into a tall column.
 - **Rows of actions** stack with `flex-col sm:flex-row`.
 - Pixel-sized SVGs that CSS can't scale (the progress ring) read `useViewport()`.
+
+**Page titles are one size everywhere.** `PageTitle` (`text-3xl` / `sm:text-4xl`, truncating)
+is the heading on Recap, a sport, a group, an activity and the group list. Pages differ in what
+sits *beside* the title, never in how big it is.
 
 Verified at 375×812, 768×1024 and desktop.
 

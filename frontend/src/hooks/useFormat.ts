@@ -85,6 +85,11 @@ export function useFormat() {
     return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')} /km`
   }
 
+  /** "Bryan Alvin" → "Bryan". Greeting-style, for the phone's profile bar. */
+  function firstName(name: string): string {
+    return name.trim().split(/\s+/)[0] ?? name
+  }
+
   /** Strava sport types are PascalCase: "WeightTraining" reads as "Weight Training". */
   function sportLabel(sportType: string): string {
     return sportType.replace(/([a-z\d])([A-Z])/g, '$1 $2')
@@ -92,6 +97,6 @@ export function useFormat() {
 
   return {
     km, duration, elevation, heartrate, shortDate, utcDate, time, initials, paceOrSpeed, pace,
-    sportLabel,
+    sportLabel, firstName,
   }
 }

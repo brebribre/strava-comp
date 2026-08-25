@@ -7,6 +7,7 @@ import AppAlert from '@/reusables/AppAlert.vue'
 import AppButton from '@/reusables/AppButton.vue'
 import AppCard from '@/reusables/AppCard.vue'
 import EmptyState from '@/reusables/EmptyState.vue'
+import PageTitle from '@/reusables/PageTitle.vue'
 import SportIcon from '@/reusables/SportIcon.vue'
 import IconChevronRight from '~icons/material-symbols/chevron-right-rounded'
 import SportLoader from '@/reusables/SportLoader.vue'
@@ -26,7 +27,7 @@ function openSport(sport: string) {
   <div class="mx-auto max-w-4xl space-y-6">
     <header class="flex flex-wrap items-center justify-between gap-3">
       <div>
-        <h1 class="text-xl font-bold tracking-tight text-ink">Recap</h1>
+        <PageTitle>Recap</PageTitle>
         <p class="mt-1 text-sm text-ink-muted">How each sport has grown. Just yours.</p>
       </div>
       <div class="flex flex-wrap gap-2">
