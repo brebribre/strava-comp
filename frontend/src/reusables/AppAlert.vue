@@ -12,7 +12,7 @@ const tones = {
 <template>
   <p
     :class="[
-      'animate-rise rounded-md border border-line border-l-2 bg-raised px-3 py-2 text-sm',
+      'animate-rise rounded-md border-l-2 bg-raised px-3 py-2 text-sm',
       tones[tone],
     ]"
   >

@@ -17,7 +17,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
     <div class="absolute inset-0 bg-ink/40" @click="emit('close')" />
 
     <div
-      class="animate-rise relative max-h-[92vh] w-full overflow-y-auto rounded-t-lg border border-line bg-surface p-5 sm:max-w-md sm:rounded-lg"
+      class="animate-rise relative max-h-[92vh] w-full overflow-y-auto rounded-t-lg bg-surface p-5 shadow-xl shadow-black/40 sm:max-w-md sm:rounded-lg"
     >
       <header class="mb-4 flex items-center justify-between gap-4">
         <h2 v-if="title" class="text-sm font-semibold text-ink">{{ title }}</h2>

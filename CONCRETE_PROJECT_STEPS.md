@@ -547,6 +547,11 @@ Endpoints:
   (longest, fastest, most elevation, hardest effort by relative effort), and consistency
   (active weeks, longest streak, biggest gap)
 
+**The overview is a list, not a grid.** One full-width row per sport, ordered by time invested:
+an oversized icon and sport name carry the row, the totals sit under them in ordinary text, and a
+chevron marks it as openable. Growth reads as `↑ 12% distance · ↓ 4% time` with no "vs previous"
+tail — the arrows say that already, and the window is stated once on the totals card.
+
 Two decisions worth keeping:
 - **Growth is suppressed when the comparison window predates the athlete's first activity.**
   Otherwise the recap reports "+1133%", which measures when someone started using Strava rather

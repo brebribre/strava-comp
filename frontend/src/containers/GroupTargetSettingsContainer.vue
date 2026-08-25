@@ -110,7 +110,7 @@ async function handleSave() {
           <div
             v-for="row in form.sports"
             :key="row.sport"
-            class="flex flex-wrap items-center gap-3 rounded-lg border border-line p-3"
+            class="flex flex-wrap items-center gap-3 rounded-lg bg-raised p-3"
           >
             <label class="flex w-40 items-center gap-2">
               <input

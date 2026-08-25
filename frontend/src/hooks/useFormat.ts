@@ -85,7 +85,13 @@ export function useFormat() {
     return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')} /km`
   }
 
+  /** Strava sport types are PascalCase: "WeightTraining" reads as "Weight Training". */
+  function sportLabel(sportType: string): string {
+    return sportType.replace(/([a-z\d])([A-Z])/g, '$1 $2')
+  }
+
   return {
     km, duration, elevation, heartrate, shortDate, utcDate, time, initials, paceOrSpeed, pace,
+    sportLabel,
   }
 }

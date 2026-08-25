@@ -8,12 +8,14 @@ import AppButton from '@/reusables/AppButton.vue'
 import AppCard from '@/reusables/AppCard.vue'
 import EmptyState from '@/reusables/EmptyState.vue'
 import SportIcon from '@/reusables/SportIcon.vue'
+import IconChevronRight from '~icons/material-symbols/chevron-right-rounded'
 import SportLoader from '@/reusables/SportLoader.vue'
 import StatTile from '@/reusables/StatTile.vue'
 
 const router = useRouter()
-const { overview, sports, days, hasData, showsGrowth, totalGrowth, isLoading, error } = useRecap()
-const { km, duration, heartrate, utcDate } = useFormat()
+const { overview, sports, days, hasData, showsGrowth, totalGrowth, growthLine, isLoading, error } =
+  useRecap()
+const { km, duration, heartrate, utcDate, sportLabel } = useFormat()
 
 function openSport(sport: string) {
   router.push({ name: 'recap-sport', params: { sport } })
@@ -78,7 +80,9 @@ function openSport(sport: string) {
         </p>
       </AppCard>
 
-      <div class="grid gap-4 sm:grid-cols-2">
+      <!-- One row per sport: the icon and the name carry it, the numbers sit underneath in
+           ordinary text, and the chevron says the row opens. -->
+      <div class="space-y-3">
         <AppCard
           v-for="sport in sports"
           :key="sport.sport_type"
@@ -86,27 +90,31 @@ function openSport(sport: string) {
           class="animate-rise"
           @click="openSport(sport.sport_type)"
         >
-          <div class="flex items-center justify-between gap-2">
-            <div class="flex items-center gap-2">
-              <SportIcon :sport="sport.sport_type" :size="20" class="text-accent" />
-              <h2 class="text-sm font-semibold text-ink">{{ sport.sport_type }}</h2>
-            </div>
-            <span class="text-xs text-ink-subtle">{{ sport.current.activity_count }} activities</span>
-          </div>
+          <div class="flex items-center gap-3 sm:gap-5">
+            <!-- The prop sizes the phone case; the class takes over from `sm` up, where
+                 there is room for the icon to match a bigger name. -->
+            <SportIcon
+              :sport="sport.sport_type"
+              :size="36"
+              class="shrink-0 text-accent sm:size-14"
+            />
 
-          <div class="mt-4 grid grid-cols-2 gap-3">
-            <StatTile
-              label="Distance"
-              :value="km(sport.current.distance)"
-              :delta="sport.growth_distance"
-              hint="no earlier data"
-            />
-            <StatTile
-              label="Time"
-              :value="duration(sport.current.moving_time)"
-              :delta="sport.growth_moving_time"
-              hint="no earlier data"
-            />
+            <div class="min-w-0 flex-1">
+              <h2 class="truncate text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+                {{ sportLabel(sport.sport_type) }}
+              </h2>
+              <p class="mt-1 text-xs text-ink-muted sm:text-sm">
+                {{ sport.current.activity_count }}
+                {{ sport.current.activity_count === 1 ? 'activity' : 'activities' }}
+                <template v-if="sport.current.distance"> · {{ km(sport.current.distance) }}</template>
+                · {{ duration(sport.current.moving_time) }}
+              </p>
+              <p v-if="growthLine(sport)" class="mt-0.5 text-xs text-ink-subtle sm:text-sm">
+                {{ growthLine(sport) }}
+              </p>
+            </div>
+
+            <IconChevronRight class="size-6 shrink-0 text-ink-subtle" aria-hidden="true" />
           </div>
         </AppCard>
       </div>

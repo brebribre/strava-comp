@@ -262,7 +262,7 @@ silently dropped.
 | `/groups/:id/summary` | `SidebarView` → `GroupView` | `SidebarContainer` + `GroupHeaderContainer` + `GroupSummaryContainer` |
 | `/groups/:id/feed` | `SidebarView` → `GroupView` | `SidebarContainer` + `GroupHeaderContainer` + `GroupFeedContainer` |
 | `/groups/:id/settings/{members,target,notifications}` | `SidebarView` → `GroupView` → `GroupSettingsView` | + `GroupSettingsNavContainer` + the section's container |
-| `/recap` | `SidebarView` | `SidebarContainer` + `RecapOverviewContainer` |
+| `/recap` | `SidebarView` | `SidebarContainer` + `RecapOverviewContainer` — one row per sport, big icon + name, chevron to open |
 | `/recap/:sport` | `SidebarView` | `SidebarContainer` + `SportRecapContainer` |
 | `/groups/:id/settings` | `SidebarView` → `GroupView` | `SidebarContainer` + `GroupHeaderContainer` + `GroupSettingsContainer` |
 | `/groups/:id/activities/:activityId` | `SidebarView` → `GroupView` | `SidebarContainer` + `GroupHeaderContainer` + `ActivityDetailContainer` |
@@ -312,7 +312,7 @@ palette isn't built for.
 |---|---|
 | `accent` (`#047857`) / `accent-contrast` / `accent-soft` | everything *active*: primary buttons, tabs, selected nav, progress fills, the GPS trace |
 | `canvas` / `surface` / `raised` | page → card → inset, in ascending contrast |
-| `line` / `line-strong` | borders, and the border on hover |
+| `line` / `line-strong` | **dividers and control outlines** — not card edges (see below) |
 | `ink` / `ink-muted` / `ink-subtle` / `ink-inverse` | text |
 | `--radius-sm…xl` (3–9px) | **subtle** corners; only avatars and swatches are rounder |
 | `--duration-quick` (130ms) / `--duration-soft` (260ms), `--ease-out-soft` | one motion system |
@@ -321,6 +321,20 @@ Surfaces aren't neutral greys: each mixes a share of the accent into a dark base
 (`color-mix(in srgb, var(--color-accent) 12%, #0a0a0a)` and upward), so the app reads as one
 colour rather than a grey app with green buttons. Cards carry slightly more than the page, which
 keeps the depth ordering visible through the tint.
+
+**Cards carry no border.** The surface tint is what separates a card from the page; an outline
+on top of it states the same thing twice and makes a stack of cards read as a grid of boxes.
+This follows from the tint doing the work — so it holds for `AppCard` and for the modal panel,
+and the rule is: *if a thing is a card, its edge comes from its background, not a border.*
+
+Borders are still right for two other jobs, and those stay:
+- **Controls** — inputs, secondary buttons, avatars, code chips. An input needs a visible target
+  before it's focused, and a background alone doesn't say "type here".
+- **Dividers** — the sidebar's right edge, the header's bottom rule, rows inside a card. These
+  are lines *between* things, not outlines *around* them.
+
+An interactive card therefore can't signal hover by brightening its edge; it lifts
+(`-translate-y-px`) and its surface goes to `raised` instead.
 
 **Body text stays neutral.** The accent marks what's active; colouring everything is what makes
 a strong hue exhausting.

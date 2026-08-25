@@ -5,9 +5,12 @@ withDefaults(defineProps<{ title?: string; interactive?: boolean }>(), { interac
 <template>
   <section
     :class="[
-      'rounded-lg border border-line bg-surface p-5',
+      // No border: the surface tint already separates a card from the page, and an outline
+      // on top of that is the same signal twice.
+      'rounded-lg bg-surface p-5',
       'transition-all duration-(--duration-quick) ease-(--ease-out-soft)',
-      interactive ? 'cursor-pointer hover:-translate-y-px hover:border-line-strong' : '',
+      // Hover has to come from the surface instead, now that there is no edge to brighten.
+      interactive ? 'cursor-pointer hover:-translate-y-px hover:bg-raised' : '',
     ]"
   >
     <header v-if="title || $slots.actions" class="mb-4 flex flex-wrap items-center justify-between gap-3">

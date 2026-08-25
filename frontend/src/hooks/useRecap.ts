@@ -2,7 +2,7 @@ import { computed, ref, watch } from 'vue'
 
 import { useRecapApi } from '@/api/useRecapApi'
 import { ApiError } from '@/api/request'
-import type { RecapOverview } from '@/types/api'
+import type { RecapOverview, SportOverview } from '@/types/api'
 
 export const RECAP_WINDOWS = [
   { days: 90, label: '3 months' },
@@ -58,7 +58,30 @@ export function useRecap() {
     ),
   }))
 
+  /**
+   * The one-line "how it changed" for a sport row, or '' when there is nothing honest to say
+   * (no covered baseline, or the sport is new in this window). Direction is an arrow rather
+   * than a colour, as everywhere else in the monochrome palette.
+   */
+  function growthLine(sport: SportOverview): string {
+    if (!showsGrowth.value) return ''
+    const parts: string[] = []
+    const add = (value: number | null, label: string) => {
+      if (value === null) return
+      const arrow = value > 0 ? '↑' : value < 0 ? '↓' : '→'
+      parts.push(`${arrow} ${Math.abs(value).toFixed(0)}% ${label}`)
+    }
+    add(sport.growth_distance, 'distance')
+    add(sport.growth_moving_time, 'time')
+    // No "vs previous" tail: the arrows already say it, and the window the comparison
+    // uses is stated once on the totals card above.
+    return parts.join(' · ')
+  }
+
   watch(days, refresh, { immediate: true })
 
-  return { overview, sports, days, hasData, showsGrowth, totalGrowth, isLoading, error, refresh }
+  return {
+    overview, sports, days, hasData, showsGrowth, totalGrowth, growthLine,
+    isLoading, error, refresh,
+  }
 }
