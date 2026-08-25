@@ -194,3 +194,70 @@ export interface TelegramTestResult {
   sent: boolean
   detail: string
 }
+
+export interface SportTotals {
+  activity_count: number
+  distance: number
+  moving_time: number
+  elevation: number
+  avg_heartrate: number | null
+}
+
+export interface SportOverview {
+  sport_type: string
+  current: SportTotals
+  previous: SportTotals
+  growth_activity_count: number | null
+  growth_distance: number | null
+  growth_moving_time: number | null
+  first_seen: string
+  last_seen: string
+}
+
+export interface RecapOverview {
+  since: string
+  until: string
+  days: number
+  total: SportTotals
+  previous_total: SportTotals
+  sports: SportOverview[]
+  baseline_complete: boolean
+  first_activity: string | null
+}
+
+export interface MonthPoint {
+  month: string
+  activity_count: number
+  distance: number
+  moving_time: number
+  elevation: number
+  avg_heartrate: number | null
+  avg_pace_seconds_per_km: number | null
+  avg_speed_kmh: number | null
+}
+
+export interface BestEffort {
+  label: string
+  value: string
+  activity_id: number
+  activity_name: string | null
+  start_date: string
+}
+
+export interface Consistency {
+  active_weeks: number
+  total_weeks: number
+  longest_streak_weeks: number
+  avg_per_week: number
+  longest_gap_days: number
+}
+
+export interface SportRecap {
+  sport_type: string
+  since: string
+  until: string
+  totals: SportTotals
+  months: MonthPoint[]
+  bests: BestEffort[]
+  consistency: Consistency
+}

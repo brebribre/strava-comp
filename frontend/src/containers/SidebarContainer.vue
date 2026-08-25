@@ -63,7 +63,20 @@ async function handleLogout() {
     </div>
 
     <nav class="flex-1 overflow-y-auto p-2">
-      <p class="px-2 py-1 text-xs font-medium uppercase tracking-wide text-ink-subtle">Groups</p>
+      <p class="px-2 py-1 text-[11px] font-medium uppercase tracking-wider text-ink-subtle">You</p>
+      <button
+        :class="[
+          'mb-3 block w-full rounded-md px-3 py-2 text-left text-sm transition-colors duration-(--duration-quick)',
+          route.name === 'recap' || route.name === 'recap-sport'
+            ? 'bg-raised font-medium text-ink'
+            : 'text-ink-muted hover:bg-raised hover:text-ink',
+        ]"
+        @click="router.push({ name: 'recap' })"
+      >
+        Recap
+      </button>
+
+      <p class="px-2 py-1 text-[11px] font-medium uppercase tracking-wider text-ink-subtle">Groups</p>
       <SportLoader v-if="isLoading" :size="26" class="py-4" />
       <p v-else-if="!groups.length" class="px-2 py-2 text-sm text-ink-subtle">No groups yet</p>
       <button

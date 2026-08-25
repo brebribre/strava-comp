@@ -493,6 +493,42 @@ inverting per theme.)*
 
 ---
 
+## Phase 13: Personal Recap ✅ DONE (added beyond the original plan)
+
+A personal, per-sport growth view — no group involved. Lives in the sidebar under **You**,
+separate from Groups.
+
+**Prerequisite:** the recap needed history the app never had. `BACKFILL_DAYS` capped every sync
+at a week, so the database held 24 activities. The sync ceiling is now 10 years
+(`POST /activities/sync?days=2000`), which pulled **160 activities across 14 months** — the list
+endpoint returns 200 per request, so even years cost a handful of calls.
+
+**What the data supports** (measured across the real activities): distance/time/elevation on all,
+`average_speed` on all, heart rate on ~85%, `suffer_score` on ~85%, cadence on ~80%, calories on
+only ~40% — so calories can't be a headline metric.
+
+Endpoints:
+- `GET /recap?days=` — every sport's totals beside the equivalent previous period, ordered by
+  time invested (commitment) rather than distance, which would always rank running first
+- `GET /recap/{sport}?months=` — monthly volume, pace/speed and HR trend, personal bests
+  (longest, fastest, most elevation, hardest effort by relative effort), and consistency
+  (active weeks, longest streak, biggest gap)
+
+Two decisions worth keeping:
+- **Growth is suppressed when the comparison window predates the athlete's first activity.**
+  Otherwise the recap reports "+1133%", which measures when someone started using Strava rather
+  than any change in training. The API returns `baseline_complete: false` and the UI explains why.
+- **The performance chart overlays pace against heart rate on two axes**, with the pace axis
+  reversed so improvement always points up. Pace falling while HR holds or drops is the single
+  clearest picture of getting fitter — and it only reads that way overlaid.
+
+✅ **Checkpoint:** each sport's growth is visible over months.
+*(verified: 26 checks — growth maths, baseline suppression, pace vs speed per sport family,
+bests selection, consistency, empty sports, auth. Live: 14 months of real running shows pace
+7:30 → 6:32 /km while average HR fell 168 → 150.)*
+
+---
+
 ## Phase 12: Notifications ✅ DONE (Telegram)
 
 WhatsApp was ruled out: Meta's Groups API only works with groups **the business creates via

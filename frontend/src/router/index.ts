@@ -24,6 +24,16 @@ const router = createRouter({
       children: [
         { path: '', redirect: { name: 'groups' } },
         {
+          path: 'recap',
+          name: 'recap',
+          component: () => import('@/containers/RecapOverviewContainer.vue'),
+        },
+        {
+          path: 'recap/:sport',
+          name: 'recap-sport',
+          component: () => import('@/containers/SportRecapContainer.vue'),
+        },
+        {
           path: 'groups',
           name: 'groups',
           component: () => import('@/containers/GroupListContainer.vue'),

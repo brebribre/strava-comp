@@ -236,6 +236,8 @@ never a token in JS. The backend must list the frontend's origin in `FRONTEND_OR
 | `GET /groups/{id}/trend?days=30` | Weekly buckets per member |
 | `GET /groups/{id}/feed?limit=20&before=` | Shared timeline, newest first, cursor-paginated; includes `polyline` + `photo_url` for the card visual |
 | `GET /activities/{id}` | One activity in full: description, calories, splits, GPS polyline |
+| `GET /recap?days=365` | Personal per-sport totals with growth vs the previous period |
+| `GET /recap/{sport}?months=12` | One sport: monthly trend, bests, consistency |
 | `GET/PUT/DELETE /groups/{id}/target` | The group's training target |
 | `GET /groups/{id}/target/progress` | Every member's progress against it, current period |
 | `POST /activities/sync?days=7` | Manual re-sync |
@@ -257,6 +259,8 @@ silently dropped.
 | `/groups/:id/summary` | `SidebarView` → `GroupView` | `SidebarContainer` + `GroupHeaderContainer` + `GroupSummaryContainer` |
 | `/groups/:id/target` | `SidebarView` → `GroupView` | `SidebarContainer` + `GroupHeaderContainer` + `GroupTargetContainer` |
 | `/groups/:id/members` | `SidebarView` → `GroupView` | `SidebarContainer` + `GroupHeaderContainer` + `GroupMembersContainer` |
+| `/recap` | `SidebarView` | `SidebarContainer` + `RecapOverviewContainer` |
+| `/recap/:sport` | `SidebarView` | `SidebarContainer` + `SportRecapContainer` |
 | `/groups/:id/settings` | `SidebarView` → `GroupView` | `SidebarContainer` + `GroupHeaderContainer` + `GroupSettingsContainer` |
 | `/groups/:id/activities/:activityId` | `SidebarView` → `GroupView` | `SidebarContainer` + `GroupHeaderContainer` + `ActivityDetailContainer` |
 

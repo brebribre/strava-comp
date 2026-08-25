@@ -27,7 +27,16 @@ def sync_activities(
     athlete: CurrentAthlete,
     session: DbSession,
     background: BackgroundTasks,
-    days: int = Query(default=None, ge=1, le=365, description="Defaults to BACKFILL_DAYS."),
+    days: int = Query(
+        default=None,
+        ge=1,
+        le=3650,
+        description=(
+            "How far back to pull. Defaults to BACKFILL_DAYS. Large values are fine — the "
+            "list endpoint returns 200 activities per request, so even years cost a handful "
+            "of calls against Strava's 200-per-15-minutes budget."
+        ),
+    ),
 ) -> SyncResult:
     days = days or get_settings().backfill_days
     since = datetime.now(UTC) - timedelta(days=days)

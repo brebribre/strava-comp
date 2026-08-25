@@ -64,9 +64,10 @@ export function useFormat() {
     if (!sportType || metres < 100 || seconds <= 0) return null
 
     if (FOOT_SPORTS.has(sportType)) {
-      const secondsPerKm = seconds / (metres / 1000)
-      const minutes = Math.floor(secondsPerKm / 60)
-      const rest = Math.round(secondsPerKm % 60)
+      // Round the total first: rounding the seconds separately produces "6:60 /km".
+      const total = Math.round(seconds / (metres / 1000))
+      const minutes = Math.floor(total / 60)
+      const rest = total % 60
       return { label: 'Pace', value: `${minutes}:${String(rest).padStart(2, '0')} /km` }
     }
 
@@ -77,5 +78,14 @@ export function useFormat() {
     return null
   }
 
-  return { km, duration, elevation, heartrate, shortDate, utcDate, time, initials, paceOrSpeed }
+  /** Seconds per km as m:ss — used by the recap, where pace is already aggregated. */
+  function pace(secondsPerKm: number | null): string {
+    if (!secondsPerKm) return '—'
+    const total = Math.round(secondsPerKm)
+    return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')} /km`
+  }
+
+  return {
+    km, duration, elevation, heartrate, shortDate, utcDate, time, initials, paceOrSpeed, pace,
+  }
 }
