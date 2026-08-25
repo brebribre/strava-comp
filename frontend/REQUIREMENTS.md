@@ -420,6 +420,12 @@ afterthought**.
 - **Rows of actions** stack with `flex-col sm:flex-row`.
 - Pixel-sized SVGs that CSS can't scale (the progress ring) read `useViewport()`.
 
+**List pages share one row shape.** The recap and the group list are the same object: a
+full-width card per item, an oversized icon and name, a line of ordinary text beneath, and a
+chevron saying the row opens. Adding to such a list is a `+` button beside the page title that
+opens `AppModal` — a bottom sheet on a phone, a dialog on a laptop — rather than forms sitting
+permanently above the list.
+
 **Page titles are one size everywhere.** `PageTitle` (`text-3xl` / `sm:text-4xl`, truncating)
 is the heading on Recap, a sport, a group, an activity and the group list. Pages differ in what
 sits *beside* the title, never in how big it is.

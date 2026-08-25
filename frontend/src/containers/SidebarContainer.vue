@@ -31,7 +31,7 @@ async function handleLogout() {
   <!-- Backdrop only exists while the drawer is open on small screens. -->
   <div
     v-if="isOpen"
-    class="fixed inset-0 z-30 bg-ink/25 lg:hidden"
+    class="fixed inset-0 z-30 bg-ink-inverse/60 lg:hidden"
     aria-hidden="true"
     @click="close"
   />

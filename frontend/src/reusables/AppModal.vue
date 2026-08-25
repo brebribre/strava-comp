@@ -14,10 +14,10 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
 
 <template>
   <div class="fixed inset-0 z-50 flex items-end justify-center sm:items-center" role="dialog" aria-modal="true">
-    <div class="absolute inset-0 bg-ink/40" @click="emit('close')" />
+    <div class="absolute inset-0 bg-ink-inverse/70" @click="emit('close')" />
 
     <div
-      class="animate-rise relative max-h-[92vh] w-full overflow-y-auto rounded-t-lg bg-surface p-5 shadow-xl shadow-black/40 sm:max-w-md sm:rounded-lg"
+      class="animate-rise relative max-h-[92vh] w-full overflow-y-auto rounded-t-lg bg-surface p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-xl shadow-black/40 sm:max-w-md sm:rounded-lg sm:pb-5"
     >
       <header class="mb-4 flex items-center justify-between gap-4">
         <h2 v-if="title" class="text-sm font-semibold text-ink">{{ title }}</h2>
