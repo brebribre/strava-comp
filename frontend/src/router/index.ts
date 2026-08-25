@@ -24,11 +24,6 @@ const router = createRouter({
       children: [
         { path: '', redirect: { name: 'groups' } },
         {
-          path: 'appearance',
-          name: 'appearance',
-          component: () => import('@/containers/AppearanceContainer.vue'),
-        },
-        {
           path: 'recap',
           name: 'recap',
           component: () => import('@/containers/RecapOverviewContainer.vue'),

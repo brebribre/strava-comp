@@ -466,6 +466,10 @@ a tab underline that scales in, and a 4px staggered rise on lists. All of it dis
 Tokens and the motion system are documented in
 [frontend/REQUIREMENTS.md](frontend/REQUIREMENTS.md) §11a.
 
+Settled on **dark-only with a pine accent** (`#047857`). A configurable accent existed briefly
+and was removed once the colour was chosen — the tokens in `style.css` are now the design, with
+no store, no persistence and no light theme.
+
 Gotcha worth remembering: **Tailwind v4 hoists `@theme` to `:root` regardless of a surrounding
 media query**, so `@media (prefers-color-scheme: dark) { @theme { … } }` applies the dark palette
 unconditionally — light mode silently rendered dark. Dark values must be plain custom property

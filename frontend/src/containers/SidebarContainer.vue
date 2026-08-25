@@ -76,19 +76,6 @@ async function handleLogout() {
         Recap
       </button>
 
-      <button
-        :class="[
-          'mb-3 block w-full rounded-md px-3 py-2 text-left text-sm',
-          'transition-colors duration-(--duration-quick)',
-          route.name === 'appearance'
-            ? 'bg-accent-soft font-medium text-accent'
-            : 'text-ink-muted hover:bg-raised hover:text-ink',
-        ]"
-        @click="router.push({ name: 'appearance' })"
-      >
-        Appearance
-      </button>
-
       <p class="px-2 py-1 text-[11px] font-medium uppercase tracking-wider text-ink-subtle">Groups</p>
       <SportLoader v-if="isLoading" :size="26" class="py-4" />
       <p v-else-if="!groups.length" class="px-2 py-2 text-sm text-ink-subtle">No groups yet</p>

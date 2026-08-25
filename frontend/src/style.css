@@ -1,34 +1,34 @@
 @import "tailwindcss";
 
 /**
- * Monochrome design system.
+ * Design system: dark only, pine accent.
  *
- * Tailwind v4 is CSS-first, so tokens live here rather than in a JS config. Hierarchy is
- * carried by contrast and weight, never hue — there is no accent colour to lean on.
+ * Tailwind v4 is CSS-first, so tokens live here rather than in a JS config. There is no
+ * light theme and no runtime theming — the palette below is the design.
  */
 @theme {
-  /* Surfaces, from page background to raised card.
-     These are computed from a neutral base plus a share of the accent, so choosing a colour
-     tints the whole app rather than only its buttons. With no accent the mix is 0% and the
-     result is exactly the neutral. */
-  --color-canvas: color-mix(in srgb, var(--tint) var(--tint-canvas), var(--base-canvas));
-  --color-surface: color-mix(in srgb, var(--tint) var(--tint-surface), var(--base-surface));
-  --color-raised: color-mix(in srgb, var(--tint) var(--tint-raised), var(--base-raised));
-  --color-line: color-mix(in srgb, var(--tint) var(--tint-line), var(--base-line));
-  --color-line-strong: color-mix(in srgb, var(--tint) var(--tint-line), var(--base-line-strong));
-
-  /* Accent: defaults to ink, so the app is monochrome until someone picks a colour.
-     Overridden at runtime by setting --color-accent on :root (see useTheme). */
-  --color-accent: var(--color-ink);
-  --color-accent-contrast: var(--color-ink-inverse);
-  /* A translucent wash of the accent, for subtle active states. */
+  /* The accent. Everything "active" is drawn in it: primary buttons, tabs, selected nav,
+     progress fills, the GPS trace. Body text stays neutral, which is what stops a strong
+     colour becoming exhausting. */
+  --color-accent: #047857;
+  /* Chosen by relative luminance against the accent, not by eye. */
+  --color-accent-contrast: #fafafa;
   --color-accent-soft: color-mix(in srgb, var(--color-accent) 12%, transparent);
 
-  /* Ink: the single "accent", i.e. maximum contrast against the canvas. */
-  --color-ink: #171717;
-  --color-ink-muted: #525252;
-  --color-ink-subtle: #a3a3a3;
-  --color-ink-inverse: #fafafa;
+  /* Surfaces: neutral bases carrying a share of the accent, so the whole app reads as one
+     colour rather than a grey app with green buttons. Cards take slightly more than the
+     page so the depth ordering survives the tint. */
+  --color-canvas: color-mix(in srgb, var(--color-accent) 12%, #0a0a0a);
+  --color-surface: color-mix(in srgb, var(--color-accent) 14%, #141414);
+  --color-raised: color-mix(in srgb, var(--color-accent) 20%, #1c1c1c);
+  --color-line: color-mix(in srgb, var(--color-accent) 28%, #262626);
+  --color-line-strong: color-mix(in srgb, var(--color-accent) 28%, #383838);
+
+  /* Ink: text, from primary to barely-there. */
+  --color-ink: #fafafa;
+  --color-ink-muted: #a3a3a3;
+  --color-ink-subtle: #6b6b6b;
+  --color-ink-inverse: #0a0a0a;
 
   /* Subtle corners throughout — nothing pill-shaped except avatars. */
   --radius-sm: 3px;
@@ -42,54 +42,10 @@
   --duration-soft: 260ms;
 }
 
-/**
- * Dark mode overrides the *variables*, not the theme.
- *
- * `@theme` blocks are hoisted to :root by Tailwind regardless of any media query wrapping
- * them, so nesting one here would apply the dark palette unconditionally. Plain custom
- * property declarations are scoped normally.
- */
-/* The neutral bases the surface tokens mix from, plus the tint amounts. JS only ever sets
-   --tint-* (and --color-accent), so light and dark keep working untouched. */
 :root {
-  --base-canvas: #fafafa;
-  --base-surface: #ffffff;
-  --base-raised: #f5f5f5;
-  --base-line: #e5e5e5;
-  --base-line-strong: #d4d4d4;
-
-  --tint: var(--color-accent);
-  --tint-canvas: 0%;
-  --tint-surface: 0%;
-  --tint-raised: 0%;
-  --tint-line: 0%;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --base-canvas: #0a0a0a;
-    --base-surface: #141414;
-    --base-raised: #1c1c1c;
-    --base-line: #262626;
-    --base-line-strong: #383838;
-
-    --color-ink: #fafafa;
-    --color-ink-muted: #a3a3a3;
-    --color-ink-subtle: #6b6b6b;
-    --color-ink-inverse: #0a0a0a;
-  }
-}
-
-:root {
-  /* Tells the browser to theme native controls — date pickers, number spinners,
-     scrollbars — to match. Without it the date field keeps a light widget on a dark page. */
-  color-scheme: light;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
-  }
+  /* Dark only: native controls (date pickers, spinners, scrollbars) follow, and the browser
+     won't offer a light rendering the palette isn't designed for. */
+  color-scheme: dark;
 }
 
 html,

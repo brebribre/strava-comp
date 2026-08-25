@@ -299,66 +299,27 @@ touches one container, not the app.
 
 ## 11a. Visual design
 
-**Monochrome.** There is no accent colour: hierarchy comes from contrast, weight and fill.
-All tokens live in `src/style.css` — components reference `bg-surface`, `text-ink-muted`,
-`border-line` and so on, never a raw Tailwind palette colour like `slate-700`.
+**Dark only, pine accent.** There is no light theme and no runtime theming — the tokens in
+`src/style.css` are the design. `color-scheme: dark` is declared so native controls (date
+pickers, spinners, scrollbars) follow, and the browser never renders a light variant the
+palette isn't built for.
 
 | Token group | Purpose |
 |---|---|
+| `accent` (`#047857`) / `accent-contrast` / `accent-soft` | everything *active*: primary buttons, tabs, selected nav, progress fills, the GPS trace |
 | `canvas` / `surface` / `raised` | page → card → inset, in ascending contrast |
 | `line` / `line-strong` | borders, and the border on hover |
-| `ink` / `ink-muted` / `ink-subtle` / `ink-inverse` | text, and the "accent" fill |
+| `ink` / `ink-muted` / `ink-subtle` / `ink-inverse` | text |
 | `--radius-sm…xl` (3–9px) | **subtle** corners; only avatars and swatches are rounder |
 | `--duration-quick` (130ms) / `--duration-soft` (260ms), `--ease-out-soft` | one motion system |
 
-**Dark mode overrides the CSS variables, not `@theme`.** Tailwind v4 hoists every `@theme`
-block to `:root` regardless of any media query around it, so a `@theme` inside
-`prefers-color-scheme: dark` applies unconditionally. Dark values are plain custom property
-declarations on `:root` inside the media query.
+Surfaces aren't neutral greys: each mixes a share of the accent into a dark base
+(`color-mix(in srgb, var(--color-accent) 12%, #0a0a0a)` and upward), so the app reads as one
+colour rather than a grey app with green buttons. Cards carry slightly more than the page, which
+keeps the depth ordering visible through the tint.
 
-**Every loading state in the app uses `SportLoader`** — running → cycling → swimming →
-tennis → weights. Two layers of motion, both pure CSS, so the component owns no timer and
-stays presentational:
-
-1. **Which sport shows** — a hard cut every 1.1s via `steps(1, end)`, never a fade, so there
-   is no half-transparent frame.
-2. **The sport itself moving** — legs and arms swinging in opposition, wheels and crank
-   spinning, the swimmer's arm stroking through drifting water, a racket swing, a barbell press.
-   Limbs are separate SVG elements rotated about anatomical origins (`transform-box: view-box`
-   lets the origin be written in viewBox coordinates).
-
-Drawn in **`--color-ink`** at full opacity — white in dark mode, near-black in light.
-
-Sizing and spacing are the caller's: 48px + label + `py-12` for full-page loads, 36px + `py-6`
-inline, 26px + `py-4` in the sidebar.
-
-**Accent colour** (Appearance, in the sidebar): the palette is monochrome by default, and an
-optional accent recolours what's *active* — primary buttons, tabs, selected nav, progress
-fills, the GPS trace — never body text.
-
-Backgrounds tint too. The surface tokens are **derived**, not overridden:
-`--color-canvas: color-mix(in srgb, var(--tint) var(--tint-canvas), var(--base-canvas))`, so JS
-only ever sets `--color-accent` and the four `--tint-*` percentages. Light and dark keep working
-because they swap the `--base-*` values underneath. Tint strength is None / Subtle / Strong, and
-cards take slightly more than the page so depth ordering survives the wash.
-
-Text on the accent is chosen by **WCAG relative luminance**, not by eye — otherwise a yellow
-accent gets white text on it.
-
-Stored in `localStorage` and applied before mount, so a saved colour doesn't flash monochrome
-first. It's a per-device display preference, so it deliberately isn't saved to the account.
-
-**Motion is small and purposeful:**
-- buttons and chips scale to `0.97` on press — the click should feel physical
-- cards marked `interactive` lift 1px and darken their border on hover
-- the tab underline scales in from the centre
-- lists use `.animate-rise` (4px + fade), staggered up to four items
-- everything is disabled under `prefers-reduced-motion: reduce`
-
-**Charts** render to canvas and cannot read CSS variables, so `useSportColors` resolves the
-palette in JS: a **tonal ramp** (dark→light, inverted for dark mode) assigned by position in
-the sorted sport list, never hashed — hashing would drop adjacent stack segments onto
-near-identical greys. Axis, grid and legend colours are passed explicitly per theme.
+**Body text stays neutral.** The accent marks what's active; colouring everything is what makes
+a strong hue exhausting.
 
 ## 11a-i. Logo
 
