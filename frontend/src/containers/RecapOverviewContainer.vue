@@ -7,6 +7,7 @@ import AppAlert from '@/reusables/AppAlert.vue'
 import AppButton from '@/reusables/AppButton.vue'
 import AppCard from '@/reusables/AppCard.vue'
 import EmptyState from '@/reusables/EmptyState.vue'
+import SportIcon from '@/reusables/SportIcon.vue'
 import SportLoader from '@/reusables/SportLoader.vue'
 import StatTile from '@/reusables/StatTile.vue'
 
@@ -85,8 +86,11 @@ function openSport(sport: string) {
           class="animate-rise"
           @click="openSport(sport.sport_type)"
         >
-          <div class="flex items-baseline justify-between gap-2">
-            <h2 class="text-sm font-semibold text-ink">{{ sport.sport_type }}</h2>
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <SportIcon :sport="sport.sport_type" :size="20" class="text-accent" />
+              <h2 class="text-sm font-semibold text-ink">{{ sport.sport_type }}</h2>
+            </div>
             <span class="text-xs text-ink-subtle">{{ sport.current.activity_count }} activities</span>
           </div>
 

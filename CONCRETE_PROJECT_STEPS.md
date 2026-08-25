@@ -56,7 +56,10 @@ supply them ourselves. All timestamps are `TIMESTAMPTZ`. `groups.created_by` is
    - `Group` (id, name, invite_code, created_by FK, created_at)
    - `GroupMembership` (group_id FK, athlete_id FK, joined_at) — composite primary key `(group_id, athlete_id)`
 2. Add a startup hook or Alembic migration to create all four tables
-   — done via `create_db_and_tables()` in the FastAPI lifespan; Alembic still to come
+   — **now Alembic** (`backend/migrations`), running `upgrade head` in the FastAPI lifespan.
+   The interim `create_all()` + hand-written `ADD COLUMN IF NOT EXISTS` patches are gone;
+   databases created by that older startup are stamped and adopted rather than rebuilt.
+   See [backend/README.md](backend/README.md) for the workflow.
 3. Manually insert fake rows (one athlete, one group, one membership), query them back, confirm relationships work
    — automated as `backend/scripts/check_schema_roundtrip.py`:
    ```bash

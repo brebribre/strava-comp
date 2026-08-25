@@ -7,7 +7,7 @@ from datetime import UTC, datetime, timedelta
 
 from sqlmodel import Session, delete, select
 
-from app.infra.db import create_db_and_tables, engine
+from app.infra.db import engine, run_migrations
 from app.models import Activity, Athlete, Group, GroupMembership
 
 FAKE_ATHLETE_ID = 999_000_001
@@ -15,7 +15,7 @@ FAKE_ACTIVITY_ID = 14_000_000_000_001  # deliberately > int32, like real Strava 
 
 
 def main() -> None:
-    create_db_and_tables()
+    run_migrations()
 
     with Session(engine) as session:
         # --- clean any leftovers from a previous run -------------------------

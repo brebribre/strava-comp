@@ -10,6 +10,7 @@ import AppCard from '@/reusables/AppCard.vue'
 import BarChart from '@/reusables/BarChart.vue'
 import EmptyState from '@/reusables/EmptyState.vue'
 import LineChart from '@/reusables/LineChart.vue'
+import SportIcon from '@/reusables/SportIcon.vue'
 import SportLoader from '@/reusables/SportLoader.vue'
 import SportZonesContainer from '@/containers/SportZonesContainer.vue'
 import StatTile from '@/reusables/StatTile.vue'
@@ -54,11 +55,14 @@ const windows = [
     <SportLoader v-else-if="isLoading" :label="`Reading your ${sport} history…`" class="py-12" />
 
     <template v-else-if="recap">
-      <header>
-        <h1 class="text-xl font-bold tracking-tight text-ink">{{ recap.sport_type }}</h1>
-        <p class="mt-1 text-sm text-ink-muted">
-          {{ shortDate(recap.since) }} – {{ shortDate(recap.until) }}
-        </p>
+      <header class="flex items-center gap-3">
+        <SportIcon :sport="recap.sport_type" :size="32" class="text-accent" />
+        <div>
+          <h1 class="text-xl font-bold tracking-tight text-ink">{{ recap.sport_type }}</h1>
+          <p class="mt-0.5 text-sm text-ink-muted">
+            {{ shortDate(recap.since) }} – {{ shortDate(recap.until) }}
+          </p>
+        </div>
       </header>
 
       <EmptyState

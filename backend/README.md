@@ -53,6 +53,38 @@ cd backend && uv venv && uv pip install -r requirements.txt
 cd backend && .venv/bin/uvicorn app.main:app --reload
 ```
 
+## Database migrations
+
+Alembic owns the schema. Migrations run automatically at startup, so a deploy applies them.
+
+Add a column or table:
+
+```bash
+cd backend && .venv/bin/alembic revision --autogenerate -m "add target start date"
+```
+
+**Read the generated file before committing it.** Autogenerate is a starting point, not an
+oracle: it misses renames (it sees a drop plus an add, losing the data) and can't write
+backfills.
+
+```bash
+cd backend && .venv/bin/alembic upgrade head
+```
+
+Useful:
+- `alembic check` — fails if the models and the database have drifted
+- `alembic current` / `alembic history` — where a database is, and what exists
+- `alembic downgrade -1` — step back one revision
+
+Two things worth knowing:
+
+- **The baseline was generated against an empty database.** Autogenerating against a database
+  that already has the tables produces an empty migration, which then can't build a fresh
+  environment.
+- **A pre-Alembic database is adopted, not rebuilt.** Environments created by the old
+  `create_all()` startup have every table but no `alembic_version`; `run_migrations()` stamps
+  those before upgrading, instead of failing on "table already exists".
+
 ## Checks
 
 ```bash

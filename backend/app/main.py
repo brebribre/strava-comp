@@ -6,7 +6,7 @@ from fastapi.responses import RedirectResponse
 
 from app.api.router import api_router
 from app.config import get_settings
-from app.infra.db import create_db_and_tables
+from app.infra.db import run_migrations
 from app.infra.logging import setup_logging
 
 settings = get_settings()
@@ -25,7 +25,7 @@ TAGS_METADATA = [
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    create_db_and_tables()
+    run_migrations()
     yield
 
 

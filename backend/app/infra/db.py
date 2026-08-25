@@ -1,42 +1,49 @@
+import logging
 from collections.abc import Generator
+from pathlib import Path
 
-from sqlmodel import Session, SQLModel, create_engine
+from alembic import command
+from alembic.config import Config
+from sqlalchemy import inspect
+from sqlmodel import Session, create_engine
 
 from app.config import get_settings
 
+logger = logging.getLogger(__name__)
 settings = get_settings()
 
 engine = create_engine(settings.database_url, echo=False, pool_pre_ping=True)
 
-
-# Columns and indexes added to tables that already existed in some environment.
-#
-# SQLModel.metadata.create_all() creates missing *tables* but never alters existing ones, so
-# a column added to a shipped table appears on a fresh database and is silently absent in
-# production. These statements are idempotent and cheap; they run on every boot.
-#
-# This is a stopgap for a real migration tool — every entry here is a reminder that Alembic
-# is overdue.
-_SCHEMA_PATCHES: tuple[str, ...] = (
-    "ALTER TABLE IF EXISTS group_integrations ADD COLUMN IF NOT EXISTS telegram_chat_title VARCHAR",
-    "ALTER TABLE IF EXISTS group_integrations ADD COLUMN IF NOT EXISTS pairing_code VARCHAR",
-    "CREATE INDEX IF NOT EXISTS ix_group_integrations_pairing_code"
-    " ON group_integrations (pairing_code)",
-)
+BACKEND_ROOT = Path(__file__).resolve().parent.parent.parent
 
 
-def create_db_and_tables() -> None:
-    """Create tables for every model registered on SQLModel.metadata, then patch columns.
+def _alembic_config() -> Config:
+    """Alembic config with absolute paths, so it works whatever the working directory is."""
+    config = Config(str(BACKEND_ROOT / "alembic.ini"))
+    config.set_main_option("script_location", str(BACKEND_ROOT / "migrations"))
+    return config
 
-    Importing app.models is what registers them.
+
+def run_migrations() -> None:
+    """Bring the database up to the latest revision.
+
+    Adopts a pre-Alembic database rather than failing on it: environments created by the old
+    `SQLModel.metadata.create_all()` startup already have every table but no `alembic_version`,
+    and running the baseline against them would fail on "table already exists". Stamping first
+    records where they are, then the upgrade applies anything newer.
     """
-    import app.models  # noqa: F401  (import for the side effect of registering tables)
+    config = _alembic_config()
+    inspector = inspect(engine)
 
-    SQLModel.metadata.create_all(engine)
+    has_version_table = inspector.has_table("alembic_version")
+    has_existing_schema = inspector.has_table("athletes")
 
-    with engine.begin() as connection:
-        for statement in _SCHEMA_PATCHES:
-            connection.exec_driver_sql(statement)
+    if has_existing_schema and not has_version_table:
+        logger.info("adopting an existing pre-Alembic schema: stamping baseline")
+        command.stamp(config, "head")
+
+    command.upgrade(config, "head")
+    logger.info("database migrations are up to date")
 
 
 def session_scope() -> Generator[Session, None, None]:
