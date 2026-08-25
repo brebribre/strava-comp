@@ -10,6 +10,7 @@ import AppCard from '@/reusables/AppCard.vue'
 import SportLoader from '@/reusables/SportLoader.vue'
 import EmptyState from '@/reusables/EmptyState.vue'
 import RouteMap from '@/reusables/RouteMap.vue'
+import SportIcon from '@/reusables/SportIcon.vue'
 import StatRow from '@/reusables/StatRow.vue'
 
 const route = useRoute()
@@ -90,8 +91,9 @@ function statsFor(item: {
                 {{ entry.item.name ?? 'Untitled activity' }}
                 <span
                   v-if="entry.item.sport_type"
-                  class="ml-1 rounded-sm border border-line px-1.5 py-0.5 text-[11px] text-ink-muted"
+                  class="ml-1 inline-flex items-center gap-1 rounded-sm border border-line px-1.5 py-0.5 align-middle text-[11px] text-ink-muted"
                 >
+                  <SportIcon :sport="entry.item.sport_type" :size="13" class="text-accent" />
                   {{ entry.item.sport_type }}
                 </span>
               </p>

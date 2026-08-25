@@ -352,6 +352,24 @@ stories show without cropping. Rendered with `useShareCard`:
   from the user agent.
 - The user sees a **preview before sending**, as on Strava.
 
+## 11a-ii. Sport icons
+
+`SportIcon` renders a sport with **Material Symbols** (Apache 2.0), compiled in at build time
+by `unplugin-icons` — no runtime fetch, and only the icons actually referenced are bundled.
+Chosen over the alternatives because it was the only set carrying a real `badminton` icon
+alongside full coverage of everything else Strava reports.
+
+Arbitrary `sport_type` values collapse to one of 15 families via `useSportIcon().resolve()`,
+so `TrailRun`, `VirtualRide` and `EBikeRide` all land somewhere sensible; anything unknown
+falls back to a generic exercise icon.
+
+Used in the recap (sport cards, per-sport header), the group feed and activity detail (sport
+badges) and the summary totals row.
+
+**Two places deliberately keep hand-drawn paths**: `SportLoader`, because it animates limbs
+that no icon set provides, and the share card, which strokes the same path data onto a canvas
+with `Path2D`.
+
 ## 11b. Responsive rules
 
 The app is used on phones as much as laptops, so **mobile is a first-class layout, not an

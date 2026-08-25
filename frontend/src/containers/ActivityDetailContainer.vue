@@ -14,6 +14,7 @@ import SportLoader from '@/reusables/SportLoader.vue'
 import DataTable, { type Column } from '@/reusables/DataTable.vue'
 import AppModal from '@/reusables/AppModal.vue'
 import RouteMap from '@/reusables/RouteMap.vue'
+import SportIcon from '@/reusables/SportIcon.vue'
 import StatRow from '@/reusables/StatRow.vue'
 
 const route = useRoute()
@@ -104,8 +105,9 @@ function goBack() {
           {{ activity.name ?? 'Untitled activity' }}
           <span
             v-if="activity.sport_type"
-            class="ml-1 rounded-sm border border-line px-1.5 py-0.5 align-middle text-[11px] font-medium text-ink-muted"
+            class="ml-1 inline-flex items-center gap-1 rounded-sm border border-line px-1.5 py-0.5 align-middle text-[11px] font-medium text-ink-muted"
           >
+            <SportIcon :sport="activity.sport_type" :size="14" class="text-accent" />
             {{ activity.sport_type }}
           </span>
         </h1>

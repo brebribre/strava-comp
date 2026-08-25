@@ -13,6 +13,7 @@ import AppCard from '@/reusables/AppCard.vue'
 import SportLoader from '@/reusables/SportLoader.vue'
 import BarChart from '@/reusables/BarChart.vue'
 import FilterChip from '@/reusables/FilterChip.vue'
+import SportIcon from '@/reusables/SportIcon.vue'
 import DataTable, { type Column } from '@/reusables/DataTable.vue'
 import EmptyState from '@/reusables/EmptyState.vue'
 import TargetHeroContainer from '@/containers/TargetHeroContainer.vue'
@@ -77,8 +78,16 @@ async function handleSync() {
       <DataTable v-else :columns="columns" :rows="members" row-key="athlete_id">
         <template #name="{ row }">
           <span class="font-medium">{{ row.name }}</span>
-          <span v-if="row.by_sport.length" class="ml-2 hidden text-xs text-ink-subtle sm:inline">
-            {{ row.by_sport.map((s: any) => s.sport_type).join(', ') }}
+          <!-- Icons instead of a comma list: it reads at a glance and survives four sports
+               without wrapping the cell. -->
+          <span v-if="row.by_sport.length" class="ml-2 hidden items-center gap-1 sm:inline-flex">
+            <SportIcon
+              v-for="sport in row.by_sport"
+              :key="sport.sport_type"
+              :sport="sport.sport_type"
+              :size="14"
+              class="text-ink-subtle"
+            />
           </span>
         </template>
         <template #total_distance="{ row }">{{ km(row.total_distance) }}</template>
