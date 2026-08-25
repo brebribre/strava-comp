@@ -7,7 +7,7 @@ from app.schemas.groups import GroupCreate, GroupJoin, GroupMember, GroupRead
 from app.schemas.feed import GroupFeed
 from app.schemas.integrations import TelegramSettings, TelegramTestResult
 from app.schemas.summary import GroupSummary, GroupTrend
-from app.schemas.target import TargetProgress, TargetRead, TargetWrite
+from app.schemas.target import TargetHistory, TargetProgress, TargetRead, TargetWrite
 from app.services import groups as groups_service
 from app.services import summary as summary_service
 from app.services import notifications as notifications_service
@@ -167,6 +167,23 @@ def put_target(body: TargetWrite, group: MemberGroup, session: DbSession) -> Tar
 def delete_target(group: MemberGroup, session: DbSession) -> None:
     if not target_service.delete_target(session, group.id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No target set")
+
+
+@router.get(
+    "/{group_id}/target/history",
+    summary="Week-by-week progress against the target",
+    description="Newest week first. 404 when no target is set. Members only.",
+    response_model=TargetHistory,
+)
+def target_history(
+    group: MemberGroup,
+    session: DbSession,
+    weeks: int = Query(default=12, ge=1, le=52),
+) -> TargetHistory:
+    try:
+        return target_service.target_history(session, group, weeks=weeks)
+    except LookupError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No target set") from None
 
 
 @router.get(

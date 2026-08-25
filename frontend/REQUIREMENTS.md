@@ -255,16 +255,15 @@ silently dropped.
 | `/login` | `LoginView` | `LoginContainer` |
 | `/join/:code` (public) | `JoinView` | `JoinInviteContainer` |
 | `/groups` | `SidebarView` | `SidebarContainer` + `GroupListContainer` |
-| `/groups/:id/feed` | `SidebarView` → `GroupView` | `SidebarContainer` + `GroupHeaderContainer` + `GroupFeedContainer` |
 | `/groups/:id/summary` | `SidebarView` → `GroupView` | `SidebarContainer` + `GroupHeaderContainer` + `GroupSummaryContainer` |
-| `/groups/:id/target` | `SidebarView` → `GroupView` | `SidebarContainer` + `GroupHeaderContainer` + `GroupTargetContainer` |
-| `/groups/:id/members` | `SidebarView` → `GroupView` | `SidebarContainer` + `GroupHeaderContainer` + `GroupMembersContainer` |
+| `/groups/:id/feed` | `SidebarView` → `GroupView` | `SidebarContainer` + `GroupHeaderContainer` + `GroupFeedContainer` |
+| `/groups/:id/settings/{members,target,notifications}` | `SidebarView` → `GroupView` → `GroupSettingsView` | + `GroupSettingsNavContainer` + the section's container |
 | `/recap` | `SidebarView` | `SidebarContainer` + `RecapOverviewContainer` |
 | `/recap/:sport` | `SidebarView` | `SidebarContainer` + `SportRecapContainer` |
 | `/groups/:id/settings` | `SidebarView` → `GroupView` | `SidebarContainer` + `GroupHeaderContainer` + `GroupSettingsContainer` |
 | `/groups/:id/activities/:activityId` | `SidebarView` → `GroupView` | `SidebarContainer` + `GroupHeaderContainer` + `ActivityDetailContainer` |
 
-`/groups/:id` redirects to the feed. **Two levels of nested `router-view`:** `SidebarView`
+`/groups/:id` redirects to the **summary** — the target and week-by-week progress are what people open a group for. Settings pages all share one root class (`max-w-2xl space-y-4`) so switching sections doesn't shift the layout. **Two levels of nested `router-view`:** `SidebarView`
 renders the sidebar plus a child outlet; `GroupView` renders the group header and tabs plus
 its own outlet, so the tabs stay mounted while feed/summary swap underneath — the pattern
 described in §3.

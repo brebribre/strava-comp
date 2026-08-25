@@ -213,11 +213,36 @@ def main() -> None:
         check("past `until` is flagged expired", r.json()["is_expired"] is True)
         check("expired target reports no periods remaining", r.json()["periods_remaining"] == 0)
 
+        print("\nweekly history")
+        r = alice.get(f"/groups/{group_id}/target/history", params={"weeks": 6})
+        check("200", r.status_code == 200, str(r.json())[:150])
+        history = r.json()
+        check("newest week first", history["weeks"][0]["is_current"] is True)
+        check("requested number of weeks", len(history["weeks"]) == 6)
+        check("every member present in each week",
+              all({m["athlete_id"] for m in w["members"]} == {ALICE_ID, BOB_ID} for w in history["weeks"]))
+
+        this_week = history["weeks"][0]
+        mine = next(m for m in this_week["members"] if m["athlete_id"] == ALICE_ID)
+        check("current week counts qualifying activities", mine["completed"] == 3, str(mine))
+        check("inactive member at zero",
+              next(m for m in this_week["members"] if m["athlete_id"] == BOB_ID)["completed"] == 0)
+        check("older week counted separately",
+              all(m["completed"] == 0 for m in history["weeks"][2]["members"]))
+
+        r = alice.put(f"/groups/{group_id}/target", json={**payload, "count": 8, "period": "month"})
+        r = alice.get(f"/groups/{group_id}/target/history", params={"weeks": 4})
+        check("a monthly target is spread across weeks", r.json()["target_count"] == 2,
+              "8 per month ≈ 2 per week")
+        alice.put(f"/groups/{group_id}/target", json=payload)
+
         print("\napi: access control")
         check("non-member GET → 403", carol.get(f"/groups/{group_id}/target").status_code == 403)
         check("non-member PUT → 403", carol.put(f"/groups/{group_id}/target", json=payload).status_code == 403)
         check("non-member progress → 403", carol.get(f"/groups/{group_id}/target/progress").status_code == 403)
         check("anonymous → 401", anon.get(f"/groups/{group_id}/target").status_code == 401)
+        check("non-member history → 403",
+              carol.get(f"/groups/{group_id}/target/history").status_code == 403)
 
         print("\napi: delete")
         check("DELETE → 204", alice.delete(f"/groups/{group_id}/target").status_code == 204)

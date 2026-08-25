@@ -9,10 +9,13 @@ from app.models import Activity, Athlete, Group, GroupMembership, GroupTarget
 from app.models.base import utcnow
 from app.schemas.target import (
     MemberProgress,
+    TargetHistory,
     TargetProgress,
     TargetRead,
     TargetRules,
+    TargetWeek,
     TargetWrite,
+    WeekMemberProgress,
 )
 from app.services.errors import GroupNotFound
 
@@ -181,4 +184,90 @@ def target_progress(session: Session, group: Group, now: datetime | None = None)
         periods_remaining=_periods_remaining(target.period, period_end, target.until),
         is_expired=now > target.until,
         members=progress,
+    )
+
+
+def target_history(
+    session: Session, group: Group, weeks: int = 12, now: datetime | None = None
+) -> TargetHistory:
+    """Week-by-week counts for every member, newest first.
+
+    Always weekly, even when the target period is a month or a year: a week is the unit
+    people actually plan around, and a monthly target still reads sensibly as a weekly bar.
+    """
+    now = now or datetime.now(UTC)
+
+    target = session.get(GroupTarget, group.id)
+    if target is None:
+        raise LookupError(f"group {group.id} has no target")
+
+    rules = TargetRules.model_validate(target.rules)
+    # A monthly or yearly target is spread across the weeks it covers, so the bar means
+    # "on pace" rather than "hit the whole target this week".
+    per_week = {
+        "week": target.count,
+        "month": max(round(target.count / 4.345), 1),
+        "year": max(round(target.count / 52), 1),
+    }[target.period]
+
+    members = session.exec(
+        select(Athlete)
+        .join(GroupMembership, GroupMembership.athlete_id == Athlete.athlete_id)
+        .where(GroupMembership.group_id == group.id)
+        .order_by(GroupMembership.joined_at)
+    ).all()
+    member_ids = [athlete.athlete_id for athlete in members]
+
+    current_start, current_end = period_bounds("week", now)
+    earliest = current_start - timedelta(weeks=weeks - 1)
+
+    activities = []
+    if member_ids:
+        activities = session.exec(
+            select(Activity).where(
+                Activity.owner_id.in_(member_ids),
+                Activity.start_date >= earliest,
+                Activity.start_date < current_end,
+            )
+        ).all()
+
+    # (athlete, week_start) -> qualifying count
+    counts: dict[tuple[int, datetime], int] = {}
+    for activity in activities:
+        if not qualifies(activity, rules):
+            continue
+        week_start, _ = period_bounds("week", activity.start_date)
+        key = (activity.owner_id, week_start)
+        counts[key] = counts.get(key, 0) + 1
+
+    out: list[TargetWeek] = []
+    for index in range(weeks):
+        week_start = current_start - timedelta(weeks=index)
+        week_end = week_start + timedelta(days=7)
+        out.append(
+            TargetWeek(
+                week_start=week_start,
+                week_end=week_end,
+                is_current=index == 0,
+                target_count=per_week,
+                members=[
+                    WeekMemberProgress(
+                        athlete_id=athlete.athlete_id,
+                        name=athlete.name,
+                        completed=(done := counts.get((athlete.athlete_id, week_start), 0)),
+                        remaining=max(per_week - done, 0),
+                        is_complete=done >= per_week,
+                        percent=round(min(done / per_week, 1.0) * 100, 1),
+                    )
+                    for athlete in members
+                ],
+            )
+        )
+
+    return TargetHistory(
+        group_id=group.id,
+        group_name=group.name,
+        target_count=per_week,
+        period=target.period,
+        weeks=out,
     )

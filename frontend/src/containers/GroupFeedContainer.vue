@@ -9,7 +9,6 @@ import AppButton from '@/reusables/AppButton.vue'
 import AppCard from '@/reusables/AppCard.vue'
 import SportLoader from '@/reusables/SportLoader.vue'
 import EmptyState from '@/reusables/EmptyState.vue'
-import TargetHeroContainer from '@/containers/TargetHeroContainer.vue'
 import RouteMap from '@/reusables/RouteMap.vue'
 import StatRow from '@/reusables/StatRow.vue'
 
@@ -49,9 +48,6 @@ function statsFor(item: {
 
 <template>
   <div class="mx-auto max-w-2xl space-y-4">
-    <!-- Status glance, not a settings entry: no edit button, and silent when unset. -->
-    <TargetHeroContainer hide-when-unset />
-
     <AppAlert v-if="error" tone="error">{{ error }}</AppAlert>
 
     <SportLoader v-if="isLoading" label="Loading feed…" class="py-12" />

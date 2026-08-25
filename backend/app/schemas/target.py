@@ -70,3 +70,30 @@ class TargetProgress(BaseModel):
     periods_remaining: int
     is_expired: bool
     members: list[MemberProgress]
+
+
+class WeekMemberProgress(BaseModel):
+    athlete_id: int
+    name: str
+    completed: int
+    remaining: int
+    is_complete: bool
+    percent: float
+
+
+class TargetWeek(BaseModel):
+    """One past week, with every member's count against the target."""
+
+    week_start: datetime
+    week_end: datetime
+    is_current: bool
+    target_count: int
+    members: list[WeekMemberProgress]
+
+
+class TargetHistory(BaseModel):
+    group_id: int
+    group_name: str
+    target_count: int
+    period: Period
+    weeks: list[TargetWeek]

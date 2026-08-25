@@ -15,6 +15,8 @@ import BarChart from '@/reusables/BarChart.vue'
 import FilterChip from '@/reusables/FilterChip.vue'
 import DataTable, { type Column } from '@/reusables/DataTable.vue'
 import EmptyState from '@/reusables/EmptyState.vue'
+import TargetHeroContainer from '@/containers/TargetHeroContainer.vue'
+import TargetHistoryContainer from '@/containers/TargetHistoryContainer.vue'
 
 const route = useRoute()
 const groupId = () => Number(route.params.id)
@@ -57,6 +59,10 @@ async function handleSync() {
       </AppButton>
       <AppButton variant="ghost" :loading="isSyncing" @click="handleSync">Sync</AppButton>
     </header>
+
+    <!-- Target first: it's the reason most people open the group. -->
+    <TargetHeroContainer hide-when-unset />
+    <TargetHistoryContainer />
 
     <AppAlert v-if="error" tone="error">{{ error }}</AppAlert>
     <AppAlert v-else-if="lastResult" tone="success">{{ lastResult }}</AppAlert>

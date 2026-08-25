@@ -35,7 +35,7 @@ const { isMobile } = useViewport()
 const ringSize = computed(() => (isMobile.value ? 150 : 190))
 
 function openSettings() {
-  router.push({ name: 'group-settings', params: { id: route.params.id } })
+  router.push({ name: 'group-settings-target', params: { id: route.params.id } })
 }
 </script>
 

@@ -297,3 +297,28 @@ export interface ZoneRecap {
   classified_count: number
   unclassified_count: number
 }
+
+export interface WeekMemberProgress {
+  athlete_id: number
+  name: string
+  completed: number
+  remaining: number
+  is_complete: boolean
+  percent: number
+}
+
+export interface TargetWeek {
+  week_start: string
+  week_end: string
+  is_current: boolean
+  target_count: number
+  members: WeekMemberProgress[]
+}
+
+export interface TargetHistory {
+  group_id: number
+  group_name: string
+  target_count: number
+  period: TargetPeriod
+  weeks: TargetWeek[]
+}

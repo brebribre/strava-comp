@@ -44,32 +44,44 @@ const router = createRouter({
           // active tab's container swaps underneath.
           component: () => import('@/views/GroupView.vue'),
           children: [
-            { path: '', name: 'group', redirect: { name: 'group-feed' } },
-            {
-              path: 'feed',
-              name: 'group-feed',
-              component: () => import('@/containers/GroupFeedContainer.vue'),
-            },
+            // Summary first: it leads with the target and the week-by-week progress,
+            // which is what people open the group to see.
+            { path: '', name: 'group', redirect: { name: 'group-summary' } },
             {
               path: 'summary',
               name: 'group-summary',
               component: () => import('@/containers/GroupSummaryContainer.vue'),
             },
             {
-              path: 'members',
-              name: 'group-members',
-              component: () => import('@/containers/GroupMembersContainer.vue'),
-            },
-            {
-              path: 'target',
-              name: 'group-target',
-              component: () => import('@/containers/GroupTargetContainer.vue'),
+              path: 'feed',
+              name: 'group-feed',
+              component: () => import('@/containers/GroupFeedContainer.vue'),
             },
             {
               path: 'settings',
-              name: 'group-settings',
-              component: () => import('@/containers/GroupSettingsContainer.vue'),
+              component: () => import('@/views/GroupSettingsView.vue'),
+              children: [
+                { path: '', name: 'group-settings', redirect: { name: 'group-settings-members' } },
+                {
+                  path: 'members',
+                  name: 'group-settings-members',
+                  component: () => import('@/containers/GroupMembersContainer.vue'),
+                },
+                {
+                  path: 'target',
+                  name: 'group-settings-target',
+                  component: () => import('@/containers/GroupTargetSettingsContainer.vue'),
+                },
+                {
+                  path: 'notifications',
+                  name: 'group-settings-notifications',
+                  component: () => import('@/containers/GroupNotificationsContainer.vue'),
+                },
+              ],
             },
+            // Old links kept working rather than 404ing.
+            { path: 'target', redirect: { name: 'group-summary' } },
+            { path: 'members', redirect: { name: 'group-settings-members' } },
             {
               path: 'activities/:activityId',
               name: 'activity',

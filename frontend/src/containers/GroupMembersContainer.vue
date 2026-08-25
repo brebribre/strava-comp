@@ -22,7 +22,7 @@ const { initials, utcDate } = useFormat()
 </script>
 
 <template>
-  <div class="mx-auto max-w-2xl space-y-4">
+  <div class="max-w-2xl space-y-4">
     <AppAlert v-if="error" tone="error">{{ error }}</AppAlert>
     <SportLoader v-else-if="isLoading" label="Loading members…" class="py-12" />
 
