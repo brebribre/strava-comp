@@ -402,6 +402,10 @@ afterthought**.
     everything beneath it, so `/recap/Run` keeps Recap lit and `/groups/5/feed` keeps Groups.
 
   From `lg` up both disappear and the sidebar is static and in flow, doing both jobs.
+- **No scrollbar tracks on phones.** Every scroll container below `lg` keeps its scrolling and
+  loses its bar (`scrollbar-width: none` plus the `::-webkit-scrollbar` reset) — a native list
+  moves without a gutter down its side. Desktop keeps its scrollbars, where they are how you
+  know a panel scrolls at all.
 - **Zoom is off on phones.** `maximum-scale=1, user-scalable=no, viewport-fit=cover` plus
   `touch-action: manipulation` and no tap highlight. iOS Safari ignores `user-scalable=no` on
   purpose, so `main.ts` also refuses Safari's `gesture*` events — that is the part that

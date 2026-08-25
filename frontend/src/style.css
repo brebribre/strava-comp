@@ -68,6 +68,22 @@ body {
   text-size-adjust: 100%;
 }
 
+/* No scrollbar tracks on phones. A native app has no gutter down the side of a list — the
+   content just moves — so every scroll container below `lg` keeps its scrolling and loses its
+   bars. Desktop keeps them: there the scrollbar is how you know a panel scrolls at all. */
+@media (width < 64rem) {
+  * {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  *::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+  }
+}
+
 /* Selection stays available in prose and inputs, but dragging a label or a nav item
    shouldn't start a text selection the way it never does in a native app. */
 button,
