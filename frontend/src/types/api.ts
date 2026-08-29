@@ -84,6 +84,12 @@ export interface SyncResult {
   activities_saved: number
 }
 
+export interface Exercise {
+  name: string
+  /** Free text from the logging app: "20 kg x 12", "10 reps", "1km - 7min". */
+  sets: string[]
+}
+
 export interface FeedItem {
   activity_id: number
   athlete_id: number
@@ -98,6 +104,7 @@ export interface FeedItem {
   start_date: string
   polyline: string | null
   photo_url: string | null
+  exercises: Exercise[]
 }
 
 export interface GroupFeed {
@@ -134,6 +141,7 @@ export interface ActivityDetail {
   polyline: string | null
   photo_url: string | null
   splits: Split[]
+  exercises: Exercise[]
   is_detailed: boolean
 }
 

@@ -12,6 +12,7 @@ from app.schemas.activity_detail import ActivityDetail, Split
 from app.services.activities import save_activities_to_db
 from app.services.errors import AthleteNotFound, NotAGroupMember, ReauthorizationRequired
 from app.services.tokens import get_valid_access_token
+from app.services.workout import parse_exercises
 
 logger = logging.getLogger(__name__)
 
@@ -115,6 +116,7 @@ def activity_detail(session: Session, activity_id: int, viewer_id: int) -> Activ
         polyline=polyline,
         photo_url=primary_photo(payload),
         splits=_splits(payload),
+        exercises=parse_exercises(description),
         is_detailed=is_detailed,
     )
 

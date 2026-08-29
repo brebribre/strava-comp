@@ -359,6 +359,41 @@ logged-out visit redirects to Strava.)*
 
 ---
 
+## Gym exercises in the feed (added beyond the original plan)
+
+Strava's API has **no structured strength data**. The detailed activity for a WeightTraining
+session carries sixty-odd fields and not one of them is an exercise, a set or a rep — checked
+against the payloads we already store rather than assumed. What it does carry is the
+description, and the apps people log lifts in (Hevy here, Strong and the rest elsewhere) write
+the whole session into it as text:
+
+    Logged with hevyapp.com
+
+    Overhead Press (Dumbbell)
+    Set 1: 20 kg x 12
+    Set 2: 20 kg x 12
+
+So the sequence was already in our database, as prose. `services/workout.py` parses it: a line
+with no "Set N" under it is a name, a line with one is a set, and a name with no sets is not an
+exercise — which is what keeps "Logged with hevyapp.com" and ordinary descriptions out. Order
+and repeats are preserved, because three treadmill blocks between two lifts is how the session
+actually went.
+
+Sets stay as free text ("20 kg x 12", "10 reps", "1km - 7min") rather than being parsed into
+numbers: every app writes them differently, and the app that wrote them has already made them
+readable.
+
+The feed card names the exercises on one line; the activity page lists them with their sets and
+shows that instead of the raw description it came from. Both are empty for everything that
+isn't a logged gym session, and — because only enriched activities have a description at all —
+for sessions Strava hasn't been asked about in detail yet.
+
+✅ **Checkpoint:** a gym session reads as a workout rather than a wall of text.
+*(verified: 16 checks — the Hevy shape, repeats kept in order, bare "Set 1" lines, dashes
+instead of colons, blocks with no blank line between them, prose that surrounds a lift; and
+nothing produced for an empty, absent or ordinary description. Run against every stored
+description: only strength sessions parse, and every parsed exercise has at least one set.)*
+
 ## Phase 8b: Group Targets ✅ DONE (added beyond the original plan)
 
 A group can set a shared training target: **N qualifying exercises per week / month / year,

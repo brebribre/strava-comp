@@ -9,6 +9,7 @@ from sqlmodel import Session, select
 from app.models import Activity, Athlete, Group, GroupMembership
 from app.schemas.feed import FeedItem, GroupFeed
 from app.services.activity_detail import primary_photo
+from app.services.workout import parse_exercises
 from app.schemas.summary import (
     GroupSummary,
     GroupTrend,
@@ -231,6 +232,9 @@ def group_feed(
             # detailed polyline is several times larger per activity.
             polyline=_summary_polyline(activity.raw_data),
             photo_url=primary_photo(activity.raw_data),
+            # Only present once an activity has been enriched: the list endpoint Strava
+            # backfills from carries no description at all.
+            exercises=parse_exercises((activity.raw_data or {}).get("description")),
         )
         for activity in rows
     ]

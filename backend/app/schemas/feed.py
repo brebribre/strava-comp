@@ -2,6 +2,8 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
+from app.schemas.workout import Exercise
+
 
 class FeedItem(BaseModel):
     """One activity by one group member, as it appears in the feed."""
@@ -21,6 +23,9 @@ class FeedItem(BaseModel):
     # Visual for the card: the GPS trace and/or a photo, whichever the activity has.
     polyline: str | None
     photo_url: str | None
+    # The lifts, for a gym session that was logged with them. Small enough to send whole:
+    # a session is a handful of exercises, and the card decides how many to show.
+    exercises: list[Exercise]
 
 
 class GroupFeed(BaseModel):

@@ -242,6 +242,7 @@ never a token in JS. The backend must list the frontend's origin in `FRONTEND_OR
 | `GET /activities/{id}` | One activity in full: description, calories, splits, GPS polyline |
 | `GET /recap?days=365` | Personal per-sport totals with growth vs the previous period |
 | `GET /recap/{sport}?months=12` | One sport: monthly trend, bests, consistency |
+| `GET /activities/{id}` | One activity in full, incl. `exercises` parsed from a logged gym session |
 | `GET/PUT/DELETE /groups/{id}/target` | The group's training target — `count`/`period`, `starts_at`–`until`, per-sport rules |
 | `GET /groups/{id}/target/progress` | Every member's progress against it, current period |
 | `POST /activities/sync?days=7` | Manual re-sync |

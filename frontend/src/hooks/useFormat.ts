@@ -85,6 +85,15 @@ export function useFormat() {
     return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')} /km`
   }
 
+  /** The exercises of a gym session as one line, each name once, in the order done. */
+  function exerciseSummary(exercises: { name: string }[]): string {
+    const seen = new Set<string>()
+    return exercises
+      .map((exercise) => exercise.name)
+      .filter((name) => !seen.has(name) && seen.add(name))
+      .join(' · ')
+  }
+
   /** "Bryan Alvin" → "Bryan". Greeting-style, for the phone's profile bar. */
   function firstName(name: string): string {
     return name.trim().split(/\s+/)[0] ?? name
@@ -97,6 +106,6 @@ export function useFormat() {
 
   return {
     km, duration, elevation, heartrate, shortDate, utcDate, time, initials, paceOrSpeed, pace,
-    sportLabel, firstName,
+    sportLabel, firstName, exerciseSummary,
   }
 }

@@ -15,6 +15,7 @@ import DataTable, { type Column } from '@/reusables/DataTable.vue'
 import AppModal from '@/reusables/AppModal.vue'
 import RouteMap from '@/reusables/RouteMap.vue'
 import SportIcon from '@/reusables/SportIcon.vue'
+import ExerciseList from '@/reusables/ExerciseList.vue'
 import StatRow from '@/reusables/StatRow.vue'
 
 const route = useRoute()
@@ -112,15 +113,30 @@ function goBack() {
           </span>
         </h1>
 
+        <!-- When the description is a logged gym session it is shown as the exercise list
+             below instead, rather than twice. -->
         <p
-          v-if="activity.description"
+          v-if="activity.description && !activity.exercises.length"
           class="mt-2 whitespace-pre-line text-sm text-ink"
         >
           {{ activity.description }}
         </p>
-        <p v-else class="mt-2 text-sm italic text-ink-subtle">No description</p>
+        <p
+          v-else-if="!activity.description"
+          class="mt-2 text-sm italic text-ink-subtle"
+        >
+          No description
+        </p>
 
         <StatRow class="mt-5" :stats="stats()" />
+
+        <div v-if="activity.exercises.length" class="mt-5 border-t border-line pt-4">
+          <p class="mb-2 text-[11px] font-medium uppercase tracking-wider text-ink-subtle">
+            {{ activity.exercises.length }}
+            exercise{{ activity.exercises.length === 1 ? '' : 's' }}
+          </p>
+          <ExerciseList :exercises="activity.exercises" />
+        </div>
 
         <AppAlert v-if="!activity.is_detailed" tone="info" class="mt-4">
           Some details couldn't be loaded from Strava — showing what we have stored.

@@ -2,6 +2,8 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
+from app.schemas.workout import Exercise
+
 
 class Split(BaseModel):
     split: int
@@ -40,6 +42,9 @@ class ActivityDetail(BaseModel):
     polyline: str | None
     photo_url: str | None
     splits: list[Split]
+    # Strength sessions logged in Hevy, Strong and the like write their sets into the
+    # description; this is that, read back into a sequence. Empty for everything else.
+    exercises: list[Exercise]
 
     # False when Strava couldn't be reached, so the page can say the detail is partial.
     is_detailed: bool

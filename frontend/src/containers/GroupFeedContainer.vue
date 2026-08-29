@@ -18,7 +18,8 @@ const router = useRouter()
 const groupId = () => Number(route.params.id)
 
 const { days, isLoading, isLoadingMore, hasMore, error, loadMore } = useGroupFeed(groupId)
-const { km, duration, elevation, heartrate, time, initials, paceOrSpeed } = useFormat()
+const { km, duration, elevation, heartrate, time, initials, paceOrSpeed, exerciseSummary } =
+  useFormat()
 
 function openActivity(activityId: number) {
   router.push({ name: 'activity', params: { id: route.params.id, activityId } })
@@ -99,6 +100,12 @@ function statsFor(item: {
               </p>
 
               <StatRow class="mt-3" :stats="statsFor(entry.item)" />
+
+              <!-- Gym sessions carry their lifts; the card names them and the activity
+                   page has the sets. -->
+              <p v-if="entry.item.exercises.length" class="mt-2 truncate text-xs text-ink-muted">
+                {{ exerciseSummary(entry.item.exercises) }}
+              </p>
             </div>
           </article>
 
