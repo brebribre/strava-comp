@@ -5,12 +5,12 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from app.config import get_settings
 from app.infra import strava
 from app.infra.db import engine
-from app.models import Activity
+from app.models import Activity, Athlete
 from app.models.base import utcnow
 from app.services.errors import ReauthorizationRequired
 from app.services.tokens import get_valid_access_token
@@ -29,6 +29,8 @@ _UPDATABLE = (
     "average_heartrate",
     "max_heartrate",
     "start_date",
+    "start_date_local",
+    "utc_offset",
     "raw_data",
 )
 
@@ -38,6 +40,24 @@ def _parse_start_date(value: str | None) -> datetime | None:
         return None
     # Strava sends "2026-08-23T08:08:27Z"; fromisoformat wants an explicit offset.
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+
+def _parse_local_start(value: str | None) -> datetime | None:
+    """Strava stamps start_date_local with a Z it does not mean.
+
+    The value is the athlete's wall clock — 10:08 in Berlin comes back as
+    "2026-08-23T10:08:27Z" — so the zone is dropped rather than believed.
+    """
+    parsed = _parse_start_date(value)
+    return parsed.replace(tzinfo=None) if parsed else None
+
+
+def _parse_utc_offset(value: Any) -> int | None:
+    # Strava sends this as a float number of seconds (7200.0).
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        return None
 
 
 def to_activity_row(payload: dict[str, Any], owner_id: int) -> dict[str, Any]:
@@ -62,6 +82,8 @@ def to_activity_row(payload: dict[str, Any], owner_id: int) -> dict[str, Any]:
         "average_heartrate": payload.get("average_heartrate"),
         "max_heartrate": payload.get("max_heartrate"),
         "start_date": _parse_start_date(payload.get("start_date")),
+        "start_date_local": _parse_local_start(payload.get("start_date_local")),
+        "utc_offset": _parse_utc_offset(payload.get("utc_offset")),
         "raw_data": payload,
         # pg_insert bypasses SQLModel's Python-side defaults, so both timestamps are
         # set explicitly here. created_at is left out of the ON CONFLICT update below,
@@ -89,8 +111,37 @@ def save_activities_to_db(session: Session, athlete_id: int, activities: list[di
         | {"updated_at": statement.excluded["updated_at"]},
     )
     session.exec(statement)
+    _remember_timezone(session, athlete_id, list(deduped.values()))
     session.commit()
     return len(deduped)
+
+
+def _remember_timezone(session: Session, athlete_id: int, rows: list[dict[str, Any]]) -> None:
+    """Keep the athlete's offset pointing at wherever they trained most recently.
+
+    Only the newest activity in the batch counts, and only if it is newer than what the
+    athlete already reflects — a backfill of old activities must not move someone who has
+    since relocated back to their old timezone.
+    """
+    dated = [row for row in rows if row["start_date"] and row["utc_offset"] is not None]
+    if not dated:
+        return
+
+    newest = max(dated, key=lambda row: row["start_date"])
+    athlete = session.get(Athlete, athlete_id)
+    if athlete is None:
+        return
+
+    latest_seen = session.exec(
+        select(Activity.start_date)
+        .where(Activity.owner_id == athlete_id, Activity.utc_offset.is_not(None))
+        .order_by(Activity.start_date.desc())
+        .limit(1)
+    ).first()
+
+    if latest_seen is None or newest["start_date"] >= latest_seen:
+        athlete.utc_offset = newest["utc_offset"]
+        session.add(athlete)
 
 
 def sync_athlete_activities(

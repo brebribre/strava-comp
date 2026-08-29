@@ -380,6 +380,29 @@ Endpoints (all members-only):
   furthest-ahead first, with `remaining`, `percent` (capped at 100), `days_left_in_period`,
   `periods_remaining`, `is_expired` and `is_pending`
 
+**Counting is per local day, not per activity.** Two rules, applied per sport per day:
+every activity that clears the bar counts on its own, and whatever is left over is then
+added together and counts once more if *that* clears the bar. Splitting a run in two no
+longer erases it, while a real session is never absorbed into the scraps around it — a
+half-hour run plus two twelve-minute ones is two, not one. Only leftovers combine, so this
+can only credit more than the old per-activity counting, never less: nobody loses a week
+they had already banked. Sports are never added to each other, because the bar is per sport
+— a short run and a short swim share no threshold.
+
+**Days and weeks belong to the athlete, not to UTC.** `activities.start_date_local` and
+`utc_offset` come straight from Strava (recovered for every existing row from the stored
+`raw_data`, so nothing needed re-fetching), and `athletes.utc_offset` tracks their most
+recent activity — Strava's athlete record carries no timezone, and where they last trained
+is the best evidence of where they are. A brother in Tokyo finishing at 08:00 Monday is in
+Monday's week even though UTC still says Sunday. The start date is compared as a *calendar
+date* on each athlete's own clock for the same reason: "from Aug 24" is picked from a date
+field and means the day, so comparing instants would put UTC midnight nine hours into a
+Tokyo morning and silently drop the session before it.
+
+Telegram announcements follow the same rule: a short session that clears nothing on its own
+is still announced when it is the one that tips the day over, so the group never sees a
+target tick up with no message explaining it.
+
 **Start date** (`starts_at`, added later via Alembic — the first migration after the baseline).
 It scopes *scoring*, not visibility:
 - Activities before it never count, even ones inside the current period.
@@ -399,12 +422,16 @@ Frontend: **Target** tab shows the logged-in athlete's standing as a big progres
 table of everyone else; **Settings** tab (also reachable from Manage groups) edits the target.
 
 ✅ **Checkpoint:** targets are stored, enforced consistently, and visible per member.
-*(verified: 56 checks — qualification incl. time-or-distance, exactly-at-threshold, unknown
-sports, null sport_type; period maths incl. leap February and December rollover; replace-not-
-duplicate; over-achievement clamping; expiry; start date defaulting, clamping, pending and
-week-scoping; `until` before `starts_at` rejected; 403/401 access control; delete. Live: set
-4/week via the UI, edited to 6/week, ring and table updated; a future start date renders "This
-target has not started yet" and the weekly record drops to 0 weeks.)*
+*(verified: 74 checks — qualification incl. time-or-distance, exactly-at-threshold, unknown
+sports, null sport_type; daily aggregation incl. leftovers-only combining, sports never summed
+with each other, and separate days staying separate; timezones incl. a local day spanning UTC
+midnight, a negative offset pulling an activity back a day, and rows with no local time falling
+back to UTC; period maths incl. leap February and December rollover; replace-not-duplicate;
+over-achievement clamping; expiry; start date defaulting, clamping, pending and week-scoping;
+`until` before `starts_at` rejected; 403/401 access control; delete. End to end through the API:
+a split session credited, an activity that really is last week kept out, the same instant nine
+hours east counted, and a fixed clock half an hour before UTC Monday showing 0 in UTC and 2 in
+Tokyo.)*
 
 ---
 

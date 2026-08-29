@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import BigInteger, Column, ForeignKey, Index
+from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Index
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, SQLModel
 
@@ -43,6 +43,14 @@ class Activity(SQLModel, table=True):
     max_heartrate: float | None = None
 
     start_date: datetime | None = Field(default=None, sa_column=tz_column(nullable=True, index=True))
+    # The wall clock the athlete actually trained by, stored without a zone: Strava gives us
+    # start_date_local, and a target's "day" and "week" mean the athlete's, not UTC's. A
+    # brother in Sydney finishing at 08:00 Monday must not land in Sunday's week.
+    start_date_local: datetime | None = Field(
+        default=None, sa_column=Column(DateTime(timezone=False), nullable=True)
+    )
+    # Seconds east of UTC at the time of the activity, straight from Strava.
+    utc_offset: int | None = None
 
     # Full Strava payload, so new fields can be backfilled without re-fetching.
     raw_data: dict[str, Any] | None = Field(default=None, sa_column=Column(JSONB, nullable=True))

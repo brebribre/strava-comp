@@ -2,6 +2,7 @@
 
 import logging
 import secrets
+from datetime import timedelta
 
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
@@ -20,7 +21,7 @@ from app.models import (
 from app.models.base import utcnow
 from app.schemas.target import TargetRules
 from app.services.share_card import render_activity_card
-from app.services.target import qualifies
+from app.services.target import count_exercises, local_start, qualifies
 
 logger = logging.getLogger(__name__)
 
@@ -117,11 +118,45 @@ def caption_for(activity: Activity, athlete: Athlete) -> str:
 
 
 def _should_announce(session: Session, group: Group, activity: Activity) -> bool:
-    """Qualification is the group's own bar; with no target set, everything counts."""
+    """Qualification is the group's own bar; with no target set, everything counts.
+
+    A short session that on its own clears nothing still gets announced when it is the one
+    that tips the day over the bar — otherwise the group would see a target tick up with no
+    message explaining it.
+    """
     target = session.get(GroupTarget, group.id)
     if target is None:
         return True
-    return qualifies(activity, TargetRules.model_validate(target.rules))
+
+    rules = TargetRules.model_validate(target.rules)
+    if qualifies(activity, rules):
+        return True
+
+    # Does the day count for more with this activity in it than without?
+    same_day = _same_local_day(session, activity)
+    without = [other for other in same_day if other.id != activity.id]
+    return count_exercises(same_day, rules) > count_exercises(without, rules)
+
+
+def _same_local_day(session: Session, activity: Activity) -> list[Activity]:
+    """The athlete's other activities on the same local day, this one included.
+
+    The window is a day either side in UTC, then narrowed on the local date, which is what
+    makes this correct for an athlete whose local day straddles the UTC one.
+    """
+    if activity.start_date is None:
+        return [activity]
+
+    nearby = session.exec(
+        select(Activity).where(
+            Activity.owner_id == activity.owner_id,
+            Activity.start_date >= activity.start_date - timedelta(days=1),
+            Activity.start_date <= activity.start_date + timedelta(days=1),
+        )
+    ).all()
+
+    day = local_start(activity).date()
+    return [other for other in nearby if local_start(other).date() == day]
 
 
 def _already_sent(session: Session, activity_id: int, group_id: int) -> bool:

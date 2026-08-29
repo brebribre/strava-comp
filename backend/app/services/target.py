@@ -1,7 +1,9 @@
 """Group training targets: storage, qualification rules, and progress."""
 
 from calendar import monthrange
-from datetime import UTC, datetime, timedelta
+from collections import defaultdict
+from collections.abc import Iterable
+from datetime import UTC, date, datetime, timedelta
 
 from sqlmodel import Session, select
 
@@ -79,28 +81,97 @@ def delete_target(session: Session, group_id: int) -> bool:
     return True
 
 
-def qualifies(activity: Activity, rules: TargetRules) -> bool:
-    """Does this activity count as one exercise?
+def meets_rule(rules: TargetRules, sport: str | None, minutes: float, km: float) -> bool:
+    """Does this much training, in this sport, clear the bar?
 
     Time is the universal fallback. A sport may add a distance threshold, in which case
     either one qualifying is enough — a short but long-distance run still counts.
+
+    Deliberately takes bare numbers rather than an activity, because the same bar is
+    applied twice: to one activity, and to a whole day of them added up.
     """
-    minutes = (activity.moving_time or 0) / 60
-    rule = rules.sports.get(activity.sport_type or "")
+    rule = rules.sports.get(sport or "")
 
     if rule is None or (rule.min_minutes is None and rule.min_distance_km is None):
         return minutes >= rules.default_min_minutes
 
     if rule.min_minutes is not None and minutes >= rule.min_minutes:
         return True
-    if rule.min_distance_km is not None and (activity.distance or 0) / 1000 >= rule.min_distance_km:
+    if rule.min_distance_km is not None and km >= rule.min_distance_km:
         return True
     return False
 
 
+def qualifies(activity: Activity, rules: TargetRules) -> bool:
+    """Does this single activity count as one exercise on its own?"""
+    return meets_rule(
+        rules,
+        activity.sport_type,
+        (activity.moving_time or 0) / 60,
+        (activity.distance or 0) / 1000,
+    )
+
+
+def local_start(activity: Activity) -> datetime:
+    """The athlete's own wall clock for this activity, naive.
+
+    Falls back to the UTC instant for rows written before we stored the local time —
+    which is what the old counting did for everyone, so nothing regresses.
+    """
+    if activity.start_date_local is not None:
+        return activity.start_date_local
+    if activity.start_date is not None:
+        return activity.start_date.astimezone(UTC).replace(tzinfo=None)
+    return datetime.min
+
+
+def count_exercises(activities: Iterable[Activity], rules: TargetRules) -> int:
+    """How many exercises this set of activities is worth.
+
+    Per sport, per *local* day:
+
+    1. Every activity that clears the bar on its own counts, exactly as before.
+    2. What is left over is then added together, and counts once more if the total clears
+       the bar. Splitting a run in two should not erase it.
+
+    Only the leftovers are combined, so a real session is never merged into the scraps
+    around it: a half-hour run plus two twelve-minute ones is two, not one. And because
+    step 1 is untouched, this can only ever credit more than the old per-activity counting,
+    never less — nobody loses a week they had already banked.
+
+    Days are kept per sport because the bar is per sport: a short run and a short swim
+    have no shared threshold to be measured against.
+    """
+    buckets: dict[tuple[date, str], list[Activity]] = defaultdict(list)
+    for activity in activities:
+        buckets[(local_start(activity).date(), activity.sport_type or "")].append(activity)
+
+    total = 0
+    for (_, sport), items in buckets.items():
+        leftovers = []
+        for item in items:
+            if qualifies(item, rules):
+                total += 1
+            else:
+                leftovers.append(item)
+
+        minutes = sum(item.moving_time or 0 for item in leftovers) / 60
+        km = sum(item.distance or 0 for item in leftovers) / 1000
+        if meets_rule(rules, sport, minutes, km):
+            total += 1
+
+    return total
+
+
 def period_bounds(period: str, now: datetime) -> tuple[datetime, datetime]:
-    """Start (inclusive) and end (exclusive) of the period containing `now`, in UTC."""
-    now = now.astimezone(UTC)
+    """Start (inclusive) and end (exclusive) of the period containing `now`.
+
+    Aware input is normalised to UTC and comes back aware; a naive input is treated as
+    somebody's local wall clock and comes back naive, which is how per-member periods are
+    built without inventing a timezone object per athlete.
+    """
+    if now.tzinfo is not None:
+        now = now.astimezone(UTC)
     midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
     if period == "week":
@@ -134,6 +205,24 @@ def _periods_remaining(period: str, period_end: datetime, until: datetime) -> in
     return remaining
 
 
+def started(activity: Activity, target: GroupTarget) -> bool:
+    """Is this activity inside the target's window?
+
+    The start date is compared as a *calendar date* on the athlete's own clock, not as an
+    instant. A target starting "Aug 24" is picked from a date field and means the day, so
+    for a brother in Tokyo it has to mean his Aug 24 — comparing instants would put UTC
+    midnight nine hours into his morning and quietly drop the session he did before it.
+    """
+    if activity.start_date is None:
+        return False
+    return local_start(activity).date() >= target.starts_at.astimezone(UTC).date()
+
+
+def _local_now(now: datetime, athlete: Athlete) -> datetime:
+    """`now` on this athlete's wall clock, naive. No offset on record means UTC."""
+    return now.astimezone(UTC).replace(tzinfo=None) + timedelta(seconds=athlete.utc_offset or 0)
+
+
 def target_progress(session: Session, group: Group, now: datetime | None = None) -> TargetProgress:
     now = now or datetime.now(UTC)
 
@@ -143,9 +232,6 @@ def target_progress(session: Session, group: Group, now: datetime | None = None)
 
     rules = TargetRules.model_validate(target.rules)
     period_start, period_end = period_bounds(target.period, now)
-    # A target that starts mid-period only counts activities from its start date, so
-    # yesterday's session doesn't get credited to a target created today.
-    count_from = max(period_start, target.starts_at)
 
     members = session.exec(
         select(Athlete)
@@ -156,19 +242,35 @@ def target_progress(session: Session, group: Group, now: datetime | None = None)
 
     completed: dict[int, int] = {athlete.athlete_id: 0 for athlete in members}
     if members:
+        # Each member's period runs on their own clock, so the query fetches a window wide
+        # enough to cover every timezone and the exact edges are cut per member below.
         activities = session.exec(
             select(Activity).where(
                 Activity.owner_id.in_(list(completed)),
-                Activity.start_date >= count_from,
-                Activity.start_date < period_end,
+                Activity.start_date >= period_start - timedelta(days=1),
+                Activity.start_date < period_end + timedelta(days=1),
             )
         ).all()
+
+        by_owner: dict[int, list[Activity]] = defaultdict(list)
         for activity in activities:
-            # Qualification is evaluated in Python, not SQL: the rules are per-sport and
-            # OR'd across thresholds, which would be an unreadable query for no gain at
-            # this data size.
-            if qualifies(activity, rules):
-                completed[activity.owner_id] += 1
+            by_owner[activity.owner_id].append(activity)
+
+        for athlete in members:
+            local_start_bound, local_end_bound = period_bounds(
+                target.period, _local_now(now, athlete)
+            )
+            mine = [
+                activity
+                for activity in by_owner.get(athlete.athlete_id, [])
+                # A target that starts mid-period only counts from its start date, so
+                # yesterday's session isn't credited to a target created today.
+                if started(activity, target)
+                and local_start_bound <= local_start(activity) < local_end_bound
+            ]
+            # Counting happens in Python, not SQL: the rules are per-sport, OR'd across
+            # thresholds, and now aggregate per day, which no readable query would express.
+            completed[athlete.athlete_id] = count_exercises(mine, rules)
 
     progress = [
         MemberProgress(
@@ -234,22 +336,26 @@ def target_history(
 
     activities = []
     if member_ids:
+        # A day either side, so an activity that is late Sunday in UTC but Monday locally
+        # (or the reverse) still lands in the week its athlete lived through.
         activities = session.exec(
             select(Activity).where(
                 Activity.owner_id.in_(member_ids),
-                Activity.start_date >= earliest,
-                Activity.start_date < current_end,
+                Activity.start_date >= earliest - timedelta(days=1),
+                Activity.start_date < current_end + timedelta(days=1),
             )
         ).all()
 
-    # (athlete, week_start) -> qualifying count
-    counts: dict[tuple[int, datetime], int] = {}
+    # Weeks are keyed by local calendar date: the athlete's own Monday, not UTC's. Bucketing
+    # first and counting per bucket is what lets a day's activities add up.
+    grouped: dict[tuple[int, date], list[Activity]] = defaultdict(list)
     for activity in activities:
-        if not qualifies(activity, rules):
+        if not started(activity, target):
             continue
-        week_start, _ = period_bounds("week", activity.start_date)
-        key = (activity.owner_id, week_start)
-        counts[key] = counts.get(key, 0) + 1
+        local_week_start, _ = period_bounds("week", local_start(activity))
+        grouped[(activity.owner_id, local_week_start.date())].append(activity)
+
+    counts = {key: count_exercises(items, rules) for key, items in grouped.items()}
 
     out: list[TargetWeek] = []
     for index in range(weeks):
@@ -267,7 +373,9 @@ def target_history(
                     WeekMemberProgress(
                         athlete_id=athlete.athlete_id,
                         name=athlete.name,
-                        completed=(done := counts.get((athlete.athlete_id, week_start), 0)),
+                        completed=(
+                            done := counts.get((athlete.athlete_id, week_start.date()), 0)
+                        ),
                         remaining=max(per_week - done, 0),
                         is_complete=done >= per_week,
                         percent=round(min(done / per_week, 1.0) * 100, 1),

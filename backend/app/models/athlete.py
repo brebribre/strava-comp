@@ -23,4 +23,8 @@ class Athlete(SQLModel, table=True):
     access_token: str
     refresh_token: str
     token_expires_at: datetime = Field(sa_column=tz_column(nullable=False))
+    # Seconds east of UTC, taken from their most recent activity. Deciding which week is
+    # "this week" needs their current local date, and Strava's athlete record doesn't carry
+    # a timezone — their latest activity is the best evidence of where they are.
+    utc_offset: int | None = None
     created_at: datetime = Field(default_factory=utcnow, sa_column=tz_column(nullable=False))

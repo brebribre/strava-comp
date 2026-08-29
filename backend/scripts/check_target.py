@@ -14,7 +14,13 @@ from app.main import app
 from app.models import Activity, Athlete, Group, GroupMembership, GroupTarget
 from app.schemas.target import TargetRules
 from app.services.session import create_session_token
-from app.services.target import period_bounds, qualifies
+from app.services.target import (
+    count_exercises,
+    local_start,
+    period_bounds,
+    qualifies,
+    target_progress,
+)
 
 ALICE_ID = 999_000_501
 BOB_ID = 999_000_502
@@ -42,7 +48,16 @@ def cleanup() -> None:
         session.commit()
 
 
-def activity(activity_id: int, owner_id: int, when: datetime, sport: str, minutes: float, km: float = 0.0) -> Activity:
+def activity(
+    activity_id: int,
+    owner_id: int,
+    when: datetime,
+    sport: str,
+    minutes: float,
+    km: float = 0.0,
+    offset_hours: float = 0.0,
+) -> Activity:
+    """`when` is the UTC instant; offset_hours puts the athlete somewhere else."""
     return Activity(
         id=activity_id,
         owner_id=owner_id,
@@ -53,6 +68,8 @@ def activity(activity_id: int, owner_id: int, when: datetime, sport: str, minute
         elapsed_time=int(minutes * 60),
         total_elevation_gain=0.0,
         start_date=when,
+        start_date_local=(when + timedelta(hours=offset_hours)).replace(tzinfo=None),
+        utc_offset=int(offset_hours * 3600),
         raw_data={"id": activity_id},
     )
 
@@ -129,6 +146,74 @@ def main() -> None:
               not qualifies(activity(1, 1, now, "Yoga", 15), rules))
         check("missing sport_type uses the default", qualifies(activity(1, 1, now, None, 45), rules))
         check("exactly at the threshold counts", qualifies(activity(1, 1, now, "Run", 20, 0), rules))
+
+        print("\ndaily aggregation")
+        day = datetime(2026, 8, 24, 12, tzinfo=UTC)
+        # Two runs, each under both thresholds, that add up to a qualifying half hour.
+        split = [activity(1, 1, day, "Run", 12, 1.2), activity(2, 1, day, "Run", 14, 1.4)]
+        check("neither half qualifies alone", not any(qualifies(a, rules) for a in split))
+        check("but the day adds up to one exercise", count_exercises(split, rules) == 1,
+              "26 minutes of running")
+
+        check("a day that still falls short counts nothing",
+              count_exercises([activity(3, 1, day, "Run", 5, 0.5),
+                               activity(4, 1, day, "Run", 6, 0.6)], rules) == 0)
+
+        # The old per-activity behaviour has to survive: three real runs are still three.
+        full = [activity(5, 1, day, "Run", 30, 5), activity(6, 1, day, "Run", 30, 5),
+                activity(7, 1, day, "Run", 30, 5)]
+        check("qualifying activities still count individually", count_exercises(full, rules) == 3,
+              "aggregation never takes credit away")
+
+        check("a real session plus scraps that add up to nothing counts once",
+              count_exercises([activity(8, 1, day, "Run", 30, 5),
+                               activity(9, 1, day, "Run", 4, 0.4)], rules) == 1)
+
+        check("a real session is not merged into the scraps around it",
+              count_exercises([activity(16, 1, day, "Run", 30, 5),
+                               activity(17, 1, day, "Run", 12, 1.2),
+                               activity(18, 1, day, "Run", 14, 1.4)], rules) == 2,
+              "the run counts, and the two halves add up to a second")
+
+        # Different sports have different bars, so they are never added together.
+        check("sports are not summed with each other",
+              count_exercises([activity(10, 1, day, "Run", 15, 1),
+                               activity(11, 1, day, "Yoga", 20)], rules) == 0,
+              "15min run + 20min yoga is not a 35-minute anything")
+
+        check("but two of the same sport on one day do add up",
+              count_exercises([activity(12, 1, day, "Yoga", 16),
+                               activity(13, 1, day, "Yoga", 16)], rules) == 1)
+
+        next_day = day + timedelta(days=1)
+        check("scraps on separate days stay separate",
+              count_exercises([activity(14, 1, day, "Run", 12, 1),
+                               activity(15, 1, next_day, "Run", 12, 1)], rules) == 0)
+
+        print("\ntimezones")
+        # 23:30 UTC on Sunday is 08:30 Monday in Tokyo: the athlete's week, not UTC's.
+        sunday_night = datetime(2026, 8, 23, 23, 30, tzinfo=UTC)
+        tokyo = activity(20, 1, sunday_night, "Run", 30, 5, offset_hours=9)
+        check("local start is the athlete's wall clock",
+              local_start(tokyo) == datetime(2026, 8, 24, 8, 30), str(local_start(tokyo)))
+        check("their week starts on their own Monday",
+              period_bounds("week", local_start(tokyo))[0] == datetime(2026, 8, 24),
+              "UTC would have filed it under the previous week")
+
+        # And the reverse: 00:30 Monday UTC is still Sunday evening in Los Angeles.
+        monday_early = datetime(2026, 8, 24, 0, 30, tzinfo=UTC)
+        la = activity(21, 1, monday_early, "Run", 30, 5, offset_hours=-7)
+        check("a negative offset can pull an activity back a day",
+              local_start(la).date() == datetime(2026, 8, 23).date(), str(local_start(la)))
+
+        # A day is the local one, so two runs either side of UTC midnight can still add up.
+        late = activity(22, 1, datetime(2026, 8, 24, 23, 40, tzinfo=UTC), "Run", 14, 1.4, offset_hours=-7)
+        earlier = activity(23, 1, datetime(2026, 8, 24, 20, 0, tzinfo=UTC), "Run", 14, 1.4, offset_hours=-7)
+        check("a local day spanning UTC midnight still adds up",
+              count_exercises([late, earlier], rules) == 1)
+
+        check("rows with no local time fall back to UTC",
+              local_start(Activity(id=99, owner_id=1, start_date=day)) == datetime(2026, 8, 24, 12))
 
         print("\nperiod boundaries")
         wednesday = datetime(2026, 8, 19, 15, 0, tzinfo=UTC)
@@ -232,16 +317,16 @@ def main() -> None:
               "until is only 90 days out")
 
         week_start = period_bounds("week", now)[0]
-        # Every seeded activity sits at Monday noon; starting after that must discount them
-        # even though they are inside the current period.
+        # Every seeded activity sits on this week's Monday; starting the target the next day
+        # must discount them even though they are inside the current period.
         alice.put(
             f"/groups/{group_id}/target",
-            json={**payload, "starts_at": (week_start + timedelta(hours=12, minutes=1)).isoformat()},
+            json={**payload, "starts_at": (week_start + timedelta(days=1)).isoformat()},
         )
         r = alice.get(f"/groups/{group_id}/target/progress")
         by_id = {m["athlete_id"]: m for m in r.json()["members"]}
         check("activities before the start date do not count", by_id[ALICE_ID]["completed"] == 0,
-              "same period, but earlier than starts_at")
+              "same period, but an earlier day than starts_at")
 
         alice.put(f"/groups/{group_id}/target", json={**payload, "starts_at": week_start.isoformat()})
         r = alice.get(f"/groups/{group_id}/target/progress")
@@ -292,6 +377,72 @@ def main() -> None:
         r = alice.get(f"/groups/{group_id}/target/history", params={"weeks": 4})
         check("a monthly target is spread across weeks", r.json()["target_count"] == 2,
               "8 per month ≈ 2 per week")
+        alice.put(f"/groups/{group_id}/target", json=payload)
+
+        print("\napi: aggregation and timezones end to end")
+        this_week_start, _ = period_bounds("week", now)
+        inside = this_week_start + timedelta(hours=12)
+        alice.put(f"/groups/{group_id}/target",
+                  json={**payload, "starts_at": this_week_start.isoformat()})
+
+        with Session(engine) as session:
+            # Bob splits a run in two, neither half qualifying on its own.
+            session.add(activity(5101, BOB_ID, inside, "Run", minutes=12, km=1.2))
+            session.add(activity(5102, BOB_ID, inside, "Run", minutes=14, km=1.4))
+            session.commit()
+
+        def bobs_progress() -> int:
+            r = alice.get(f"/groups/{group_id}/target/progress")
+            return {m["athlete_id"]: m for m in r.json()["members"]}[BOB_ID]["completed"]
+
+        check("a split session is credited through the API", bobs_progress() == 1,
+              "12 + 14 minutes on one day")
+
+        # Two hours before UTC Monday. Stamped in UTC it belongs to last week...
+        sunday_night = this_week_start - timedelta(hours=2)
+        with Session(engine) as session:
+            session.add(activity(5104, BOB_ID, sunday_night, "Swim", minutes=40))
+            session.commit()
+        check("an activity that really is last week stays out", bobs_progress() == 1,
+              "40 minutes, but on Sunday")
+
+        # ...while the same instant in Tokyo is Monday morning, and counts.
+        with Session(engine) as session:
+            session.add(activity(5103, BOB_ID, sunday_night, "Run", minutes=30, km=5,
+                                 offset_hours=9))
+            session.commit()
+        check("the athlete's own clock moves it into the week they lived",
+              bobs_progress() == 2, "same instant as the swim, nine hours east")
+
+        # Which week is *current* is the athlete's question too, so it is asked on a fixed
+        # clock: half an hour before UTC Monday, when Tokyo is already Monday morning.
+        edge = this_week_start - timedelta(minutes=30)
+        with Session(engine) as session:
+            group = session.get(Group, group_id)
+
+            bob = session.get(Athlete, BOB_ID)
+            bob.utc_offset = None
+            session.add(bob)
+            session.commit()
+            in_utc = {m.athlete_id: m for m in target_progress(session, group, edge).members}
+
+            bob = session.get(Athlete, BOB_ID)
+            bob.utc_offset = 9 * 3600
+            session.add(bob)
+            session.commit()
+            in_tokyo = {m.athlete_id: m for m in target_progress(session, group, edge).members}
+
+        check("at that moment the week has not started in UTC", in_utc[BOB_ID].completed == 0)
+        check("but it has in Tokyo, so his week counts", in_tokyo[BOB_ID].completed == 2,
+              "the same rows, read on his clock")
+
+        with Session(engine) as session:
+            bob = session.get(Athlete, BOB_ID)
+            bob.utc_offset = None
+            session.add(bob)
+            session.exec(delete(Activity).where(Activity.id.in_([5101, 5102, 5103, 5104])))
+            session.commit()
+
         alice.put(f"/groups/{group_id}/target", json=payload)
 
         print("\napi: access control")
