@@ -6,7 +6,6 @@ import type {
   GroupSummary,
   GroupTrend,
   Target,
-  TargetHistory,
   TargetProgress,
   TargetWrite,
   TelegramSettings,
@@ -27,8 +26,6 @@ export function useGroupApi() {
     saveTarget: (groupId: number, target: TargetWrite) =>
       request<Target>('PUT', `/groups/${groupId}/target`, target),
     deleteTarget: (groupId: number) => request<void>('DELETE', `/groups/${groupId}/target`),
-    targetHistory: (groupId: number, weeks: number) =>
-      request<TargetHistory>('GET', `/groups/${groupId}/target/history?weeks=${weeks}`),
     targetProgress: (groupId: number) =>
       request<TargetProgress>('GET', `/groups/${groupId}/target/progress`),
     telegram: (groupId: number) => request<TelegramSettings>('GET', `/groups/${groupId}/telegram`),

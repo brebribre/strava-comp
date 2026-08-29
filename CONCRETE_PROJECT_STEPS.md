@@ -501,11 +501,12 @@ The group page has tabs: **Feed** (Strava-style timeline — every member's acti
 day, with avatars, sport badges and per-sport stats), **Summary**, **Target** and **Settings**.
 
 The group has three tabs — **Summary** (default), **Feed**, **Settings**. Summary leads with
-the target widget, then a **weekly record**: one row per member showing weeks hit vs weeks
-missed over the last 12 weeks, ranked by record. The current week counts as a hit once it's
-reached, but never as a miss while it's still open — otherwise every Monday would look like a
-loss for everyone. Backed by `GET /groups/{id}/target/history`, which divides a monthly or
-yearly target down to a weekly figure so the bar means "on pace".
+the target widget, then **Others**: one row per member *except the reader*, for the current
+period only, with a checkmark for anyone who has already hit the target and their count so far
+if they haven't. It reads the same progress endpoint the widget above it does, so the two can
+never disagree. (It replaced a twelve-week record of hits and misses, which answered a question
+nobody was asking on the summary page; `GET /groups/{id}/target/history` still exists and is
+now unused by the UI.)
 
 Settings has its own nav: **Members**, **Target**, **Notifications**.
 

@@ -17,7 +17,7 @@ import SportIcon from '@/reusables/SportIcon.vue'
 import DataTable, { type Column } from '@/reusables/DataTable.vue'
 import EmptyState from '@/reusables/EmptyState.vue'
 import TargetHeroContainer from '@/containers/TargetHeroContainer.vue'
-import TargetHistoryContainer from '@/containers/TargetHistoryContainer.vue'
+import GroupOthersContainer from '@/containers/GroupOthersContainer.vue'
 
 const route = useRoute()
 const groupId = () => Number(route.params.id)
@@ -63,7 +63,7 @@ async function handleSync() {
 
     <!-- Target first: it's the reason most people open the group. -->
     <TargetHeroContainer hide-when-unset />
-    <TargetHistoryContainer />
+    <GroupOthersContainer />
 
     <AppAlert v-if="error" tone="error">{{ error }}</AppAlert>
     <AppAlert v-else-if="lastResult" tone="success">{{ lastResult }}</AppAlert>
