@@ -175,11 +175,45 @@ def main() -> None:
                                activity(18, 1, day, "Run", 14, 1.4)], rules) == 2,
               "the run counts, and the two halves add up to a second")
 
-        # Different sports have different bars, so they are never added together.
-        check("sports are not summed with each other",
+        # A mixed day is still a day of training, measured on the one scale sports share.
+        check("a run and a gym session add up across sports",
               count_exercises([activity(10, 1, day, "Run", 15, 1),
-                               activity(11, 1, day, "Yoga", 20)], rules) == 0,
-              "15min run + 20min yoga is not a 35-minute anything")
+                               activity(11, 1, day, "WeightTraining", 20)], rules) == 1,
+              "15 + 20 minutes clears the 30-minute bar they share")
+
+        check("a mixed day still has to clear the strictest bar involved",
+              count_exercises([activity(30, 1, day, "Run", 12, 1),
+                               activity(31, 1, day, "Tennis", 20)], rules) == 0,
+              "32 minutes, but tennis asks for 45")
+
+        check("mixing is never an easier route than one sport",
+              count_exercises([activity(32, 1, day, "Tennis", 20),
+                               activity(33, 1, day, "Yoga", 20)], rules) == 0,
+              "40 minutes against tennis's 45")
+
+        # The case that started this: a group whose every sport asks for 45 minutes, and a
+        # member who ran for 20 and lifted for 25 on the same day.
+        strict = TargetRules.model_validate(
+            {
+                "default_min_minutes": 45,
+                "sports": {
+                    "Run": {"min_minutes": 45, "min_distance_km": None},
+                    "WeightTraining": {"min_minutes": 45, "min_distance_km": None},
+                },
+            }
+        )
+        check("a 20-minute run and a 25-minute gym session make one exercise",
+              count_exercises([activity(36, 1, day, "Run", 20, 3),
+                               activity(37, 1, day, "WeightTraining", 25)], strict) == 1,
+              "exactly at the 45-minute bar")
+        check("and 20 + 20 still does not",
+              count_exercises([activity(38, 1, day, "Run", 20, 3),
+                               activity(39, 1, day, "WeightTraining", 20)], strict) == 0)
+
+        check("distance is not carried across sports",
+              count_exercises([activity(34, 1, day, "Run", 5, 2.9),
+                               activity(35, 1, day, "Ride", 5, 20)], rules) == 0,
+              "ten minutes of training, whatever the kilometres say")
 
         check("but two of the same sport on one day do add up",
               count_exercises([activity(12, 1, day, "Yoga", 16),

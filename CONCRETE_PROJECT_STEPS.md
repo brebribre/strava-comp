@@ -415,14 +415,21 @@ Endpoints (all members-only):
   furthest-ahead first, with `remaining`, `percent` (capped at 100), `days_left_in_period`,
   `periods_remaining`, `is_expired` and `is_pending`
 
-**Counting is per local day, not per activity.** Two rules, applied per sport per day:
-every activity that clears the bar counts on its own, and whatever is left over is then
-added together and counts once more if *that* clears the bar. Splitting a run in two no
-longer erases it, while a real session is never absorbed into the scraps around it — a
-half-hour run plus two twelve-minute ones is two, not one. Only leftovers combine, so this
-can only credit more than the old per-activity counting, never less: nobody loses a week
-they had already banked. Sports are never added to each other, because the bar is per sport
-— a short run and a short swim share no threshold.
+**Counting is per local day, not per activity.** Three passes over each day: every activity
+that clears the bar counts on its own; per sport, the leftovers are added together for one
+more if that total clears the sport's bar; and finally anything still left that spans more
+than one sport is added up by time for one more if it clears the *strictest* bar of the
+sports involved. Splitting a run in two no longer erases it, and neither does a day made of
+a short run and a short gym session — which is the case that prompted the third pass, after
+a member's 20-minute run plus 25-minute lift counted for nothing.
+
+Only leftovers ever combine, so a real session is never absorbed into the scraps around it —
+a half-hour run plus two twelve-minute ones is two, not one — and because the first pass is
+untouched this can only credit more than per-activity counting, never less. The cross-sport
+pass measures time alone, because distance cannot be added across sports (three kilometres
+of running and ten on a bike are not thirteen kilometres of anything), and it takes the
+strictest bar rather than the most lenient, so mixing sports is never an easier route to a
+target than staying in one.
 
 **Days and weeks belong to the athlete, not to UTC.** `activities.start_date_local` and
 `utc_offset` come straight from Strava (recovered for every existing row from the stored

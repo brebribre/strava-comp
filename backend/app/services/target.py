@@ -102,6 +102,17 @@ def meets_rule(rules: TargetRules, sport: str | None, minutes: float, km: float)
     return False
 
 
+def time_bar(rules: TargetRules, sport: str | None) -> float:
+    """The minutes this sport asks for, falling back to the default bar.
+
+    Used when sports have to be compared on one scale, which only time offers.
+    """
+    rule = rules.sports.get(sport or "")
+    if rule is not None and rule.min_minutes is not None:
+        return rule.min_minutes
+    return rules.default_min_minutes
+
+
 def qualifies(activity: Activity, rules: TargetRules) -> bool:
     """Does this single activity count as one exercise on its own?"""
     return meets_rule(
@@ -128,37 +139,55 @@ def local_start(activity: Activity) -> datetime:
 def count_exercises(activities: Iterable[Activity], rules: TargetRules) -> int:
     """How many exercises this set of activities is worth.
 
-    Per sport, per *local* day:
+    Three passes over each *local* day:
 
     1. Every activity that clears the bar on its own counts, exactly as before.
-    2. What is left over is then added together, and counts once more if the total clears
-       the bar. Splitting a run in two should not erase it.
+    2. Per sport, what is left over is added together and counts once more if that total
+       clears the sport's bar. Splitting a run in two should not erase it.
+    3. Whatever is still left, if it spans more than one sport, is added up by *time* and
+       counts once if it clears the strictest bar of the sports involved. Half an hour of
+       running and a short gym session is a day's training however it is labelled.
 
-    Only the leftovers are combined, so a real session is never merged into the scraps
+    Only leftovers are ever combined, so a real session is never merged into the scraps
     around it: a half-hour run plus two twelve-minute ones is two, not one. And because
-    step 1 is untouched, this can only ever credit more than the old per-activity counting,
-    never less — nobody loses a week they had already banked.
+    step 1 is untouched, this can only ever credit more than per-activity counting, never
+    less — nobody loses a week they had already banked.
 
-    Days are kept per sport because the bar is per sport: a short run and a short swim
-    have no shared threshold to be measured against.
+    Step 3 measures time alone, because distance cannot be added across sports: three
+    kilometres of running and ten on a bike are not thirteen kilometres of anything. It
+    takes the *strictest* bar rather than the most lenient, so mixing sports is never an
+    easier way to hit a target than staying in one.
     """
-    buckets: dict[tuple[date, str], list[Activity]] = defaultdict(list)
+    days: dict[date, list[Activity]] = defaultdict(list)
     for activity in activities:
-        buckets[(local_start(activity).date(), activity.sport_type or "")].append(activity)
+        days[local_start(activity).date()].append(activity)
 
     total = 0
-    for (_, sport), items in buckets.items():
-        leftovers = []
+    for items in days.values():
+        by_sport: dict[str, list[Activity]] = defaultdict(list)
         for item in items:
             if qualifies(item, rules):
                 total += 1
             else:
-                leftovers.append(item)
+                by_sport[item.sport_type or ""].append(item)
 
-        minutes = sum(item.moving_time or 0 for item in leftovers) / 60
-        km = sum(item.distance or 0 for item in leftovers) / 1000
-        if meets_rule(rules, sport, minutes, km):
-            total += 1
+        remaining: dict[str, list[Activity]] = {}
+        for sport, leftovers in by_sport.items():
+            minutes = sum(item.moving_time or 0 for item in leftovers) / 60
+            km = sum(item.distance or 0 for item in leftovers) / 1000
+            if meets_rule(rules, sport, minutes, km):
+                total += 1
+            else:
+                remaining[sport] = leftovers
+
+        # Only a genuinely mixed day reaches this: a single sport has already been measured
+        # against its own rule above, and re-measuring it here would just repeat that.
+        if len(remaining) > 1:
+            minutes = sum(
+                item.moving_time or 0 for leftovers in remaining.values() for item in leftovers
+            ) / 60
+            if minutes >= max(time_bar(rules, sport) for sport in remaining):
+                total += 1
 
     return total
 
