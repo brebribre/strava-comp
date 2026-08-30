@@ -3,7 +3,7 @@
 from calendar import monthrange
 from collections import defaultdict
 from collections.abc import Iterable
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 
 from sqlmodel import Session, select
 
@@ -134,6 +134,25 @@ def local_start(activity: Activity) -> datetime:
     if activity.start_date is not None:
         return activity.start_date.astimezone(UTC).replace(tzinfo=None)
     return datetime.min
+
+
+def activities_on_local_day(session: Session, owner_id: int, day: date) -> list[Activity]:
+    """Everything this athlete did on this day, on their own clock.
+
+    Queried a day either side in UTC and then narrowed on the local date, which is what
+    makes it correct for someone whose day straddles UTC's.
+    """
+    window_start = datetime.combine(day, time.min, tzinfo=UTC) - timedelta(days=1)
+    window_end = datetime.combine(day, time.max, tzinfo=UTC) + timedelta(days=1)
+
+    nearby = session.exec(
+        select(Activity).where(
+            Activity.owner_id == owner_id,
+            Activity.start_date >= window_start,
+            Activity.start_date <= window_end,
+        )
+    ).all()
+    return [item for item in nearby if local_start(item).date() == day]
 
 
 def count_exercises(activities: Iterable[Activity], rules: TargetRules) -> int:

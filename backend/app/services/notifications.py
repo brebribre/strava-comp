@@ -21,7 +21,12 @@ from app.models import (
 from app.models.base import utcnow
 from app.schemas.target import TargetRules
 from app.services.share_card import render_activity_card
-from app.services.target import count_exercises, local_start, qualifies
+from app.services.target import (
+    activities_on_local_day,
+    count_exercises,
+    local_start,
+    qualifies,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -139,24 +144,10 @@ def _should_announce(session: Session, group: Group, activity: Activity) -> bool
 
 
 def _same_local_day(session: Session, activity: Activity) -> list[Activity]:
-    """The athlete's other activities on the same local day, this one included.
-
-    The window is a day either side in UTC, then narrowed on the local date, which is what
-    makes this correct for an athlete whose local day straddles the UTC one.
-    """
+    """The athlete's other activities on the same local day, this one included."""
     if activity.start_date is None:
         return [activity]
-
-    nearby = session.exec(
-        select(Activity).where(
-            Activity.owner_id == activity.owner_id,
-            Activity.start_date >= activity.start_date - timedelta(days=1),
-            Activity.start_date <= activity.start_date + timedelta(days=1),
-        )
-    ).all()
-
-    day = local_start(activity).date()
-    return [other for other in nearby if local_start(other).date() == day]
+    return activities_on_local_day(session, activity.owner_id, local_start(activity).date())
 
 
 def _already_sent(session: Session, activity_id: int, group_id: int) -> bool:

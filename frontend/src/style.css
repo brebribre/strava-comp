@@ -59,13 +59,25 @@ body {
   color: var(--color-ink);
 
   /* App-like on a phone, all of it paired with the locked viewport in index.html:
-     no double-tap zoom, no grey flash on tap, no rubber-band past the ends of a scroll
-     area, and no font inflation when a phone is turned sideways. */
-  touch-action: manipulation;
+     no grey flash on tap, no rubber-band past the ends of a scroll area, and no font
+     inflation when a phone is turned sideways. */
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+}
+
+/* Double-tap zoom, killed properly.
+   `touch-action` is NOT an inherited property, so declaring it on `body` alone governs
+   taps that land on the body and nothing else — every button, card and heading kept its
+   default `auto` and stayed double-tappable. It has to be set on the elements themselves.
+   `manipulation` leaves scrolling and pinch to the browser and takes only the double-tap
+   gesture, and the zero specificity of `*` means any element that needs a different value
+   can still say so. */
+*,
+*::before,
+*::after {
+  touch-action: manipulation;
 }
 
 /* No scrollbar tracks on phones. A native app has no gutter down the side of a list — the

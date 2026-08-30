@@ -422,11 +422,18 @@ afterthought**.
   its card, so the bar still reaches the bottom of the screen and only its buttons sit clear
   of the home indicator. Spending it as margin instead parks the whole bar 34px up and leaves
   a dead strip of background beneath it, which is not what a phone's tab bar looks like.
-- **Zoom is off on phones.** `maximum-scale=1, user-scalable=no, viewport-fit=cover` plus
-  `touch-action: manipulation` and no tap highlight. iOS Safari ignores `user-scalable=no` on
-  purpose, so `main.ts` also refuses Safari's `gesture*` events — that is the part that
-  actually stops a pinch. Scrolling is untouched. This is a deliberate trade: it costs pinch
-  zoom, which is a real accessibility affordance, in exchange for the app feeling installed.
+- **Zoom is off on phones**, and it takes three separate things because iOS resists each one
+  differently:
+  - `maximum-scale=1, user-scalable=no, viewport-fit=cover` in the viewport meta.
+  - `touch-action: manipulation` on **every element** (`*, *::before, *::after`), not on
+    `body`. `touch-action` is not an inherited property, so a rule on `body` governs taps
+    that land on the body and nothing else — every button and heading keeps `auto` and stays
+    double-tappable. This was shipped wrong once.
+  - `main.ts` refusing Safari's `gesture*` events, since iOS ignores `user-scalable=no` on
+    purpose. That is the part that actually stops a pinch.
+
+  Scrolling is untouched throughout. It is a deliberate trade: it costs pinch zoom, a real
+  accessibility affordance, in exchange for the app feeling installed.
 - **No horizontal page scroll, ever.** Wide content (tables, charts) scrolls inside its own
   `overflow-x-auto` container. Check with
   `document.documentElement.scrollWidth === window.innerWidth`.
