@@ -30,7 +30,10 @@ async function handleLogout() {
 </script>
 
 <template>
-  <header class="relative flex items-center justify-between gap-3 px-4 py-3">
+  <header
+    class="relative flex items-center justify-between gap-3 px-4 pb-3"
+    :style="{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }"
+  >
     <div class="flex min-w-0 items-center gap-2.5">
       <AppAvatar
         v-if="athlete"

@@ -45,7 +45,10 @@ async function handleLogout() {
       isOpen ? 'translate-x-0' : '-translate-x-full',
     ]"
   >
-    <div class="flex items-start justify-between border-b border-line p-4">
+    <div
+      class="flex items-start justify-between border-b border-line p-4"
+      :style="{ paddingTop: 'calc(1rem + env(safe-area-inset-top))' }"
+    >
       <div class="min-w-0">
         <AppLogo size="sm" />
         <p class="mt-2 truncate text-xs text-ink-muted">{{ athlete?.name ?? '…' }}</p>
