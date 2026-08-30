@@ -419,16 +419,25 @@ The webhook that stores an activity now notifies twice, independently: Telegram 
 chat, and push to every member's devices. Neither failure can cost the other, and neither can
 cost the activity.
 
-Unlike Telegram, push does **not** apply the group's target rules — every finished workout
-notifies, because "someone just trained" is the point rather than "someone earned a tick".
+**What triggers one:** reaching the day's bar, not finishing a workout. Twenty minutes leaves
+the day short and says nothing; the twenty-five that follows it crosses forty-five and sends
+*"[name] has reached today's target!"*. The question is asked of the whole day through
+`count_exercises`, so it is the same arithmetic the target itself uses, including its
+cross-sport pass.
+
+Once per athlete per group per **local** day, claimed in `push_day_notifications` before
+sending — a second qualifying workout, a Strava update event, and a re-sync all stay quiet, and
+a brother in Tokyo gets one per *his* day. A group with no target has no bar to reach, so it
+sends nothing at all.
 
 ✅ **Checkpoint:** a workout reaches a phone.
-*(verified: 27 checks — a throwaway HTTP server stands in for Apple's push service and a fake
+*(verified: 29 checks — a throwaway HTTP server stands in for Apple's push service and a fake
 browser keypair subscribes to it, so the real path is exercised end to end: the request is
 VAPID-signed, aes128gcm-encrypted, carries a day's TTL, and **decrypts back to the expected
-payload** with the deep link to the activity. Also: re-subscribing does not duplicate a device,
-a 410 drops it, the audience is the group and not outsiders, and the API refuses anonymous
-subscribes. Not verifiable here: an actual iPhone receiving one.)*
+payload** with the deep link to the activity. Also: a workout that leaves the day short sends nothing while the
+one that crosses the bar does, the same activity twice sends nothing, a third workout that day
+sends nothing, re-subscribing does not duplicate a device, a 410 drops it, and the API refuses
+anonymous subscribes. Not verifiable here: an actual iPhone receiving one.)*
 
 ## Phase 8b: Group Targets ✅ DONE (added beyond the original plan)
 
