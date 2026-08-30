@@ -24,6 +24,11 @@ const router = createRouter({
       children: [
         { path: '', redirect: { name: 'recap' } },
         {
+          path: 'notifications',
+          name: 'notifications',
+          component: () => import('@/containers/PushSettingsContainer.vue'),
+        },
+        {
           path: 'recap',
           name: 'recap',
           component: () => import('@/containers/RecapOverviewContainer.vue'),

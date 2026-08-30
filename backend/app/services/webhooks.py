@@ -15,6 +15,7 @@ from app.models import Activity, Athlete
 from app.services.activities import save_activities_to_db
 from app.services.errors import ReauthorizationRequired
 from app.services.notifications import announce_activity
+from app.services.push import notify_activity
 from app.services.tokens import get_valid_access_token
 
 logger = logging.getLogger(__name__)
@@ -27,10 +28,18 @@ def _handle_activity_upsert(session: Session, owner_id: int, activity_id: int) -
     logger.info("webhook: stored activity %s for athlete %s", activity_id, owner_id)
 
     # Announce after storing, and never let a notification failure lose the activity.
+    # The two channels are independent: Telegram going down must not cost anyone their
+    # phone notification, or the other way round.
     try:
         announce_activity(session, activity_id)
     except Exception:  # noqa: BLE001
         logger.exception("webhook: announcing activity %s failed", activity_id)
+
+    try:
+        delivered = notify_activity(session, activity_id)
+        logger.info("webhook: pushed activity %s to %s device(s)", activity_id, delivered)
+    except Exception:  # noqa: BLE001
+        logger.exception("webhook: pushing activity %s failed", activity_id)
 
 
 def _handle_activity_delete(session: Session, owner_id: int, activity_id: int) -> None:

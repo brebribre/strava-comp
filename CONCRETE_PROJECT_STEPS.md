@@ -394,6 +394,42 @@ instead of colons, blocks with no blank line between them, prose that surrounds 
 nothing produced for an empty, absent or ordinary description. Run against every stored
 description: only strength sessions parse, and every parsed exercise has at least one set.)*
 
+## Push notifications on a phone (added beyond the original plan)
+
+A notification when anyone in your groups finishes a workout — yourself included, which is
+how you know the thing works at all and that Strava actually delivered the webhook.
+
+**On iPhone this only exists inside a web app added to the Home Screen.** Safari tabs have no
+Push API on iOS, so the app now ships a **web app manifest** (`display: standalone`, its own
+icons, `start_url: /recap`) and a **service worker** whose only job is notifications — no
+offline cache, which would just mean stale activity data and a second source of truth to
+invalidate. The settings page detects an iPhone that is not installed and says so, rather than
+offering a button that cannot work. Permission is requested straight from the tap, because iOS
+ignores a prompt that isn't.
+
+Delivery is standard Web Push with a **VAPID keypair** (`VAPID_PRIVATE_KEY` signs, the public
+half is handed to the browser at subscribe time). Payloads are encrypted for the subscription's
+own keys, so Apple relays something it cannot read. Subscriptions live in `push_subscriptions`,
+keyed by the endpoint URL — that is what makes a device unique, so re-subscribing the same
+phone updates a row instead of adding one. A push service answering **404 or 410** means the
+device is gone for good and the row is deleted; anything else is a transient failure and the
+device is kept.
+
+The webhook that stores an activity now notifies twice, independently: Telegram to the group
+chat, and push to every member's devices. Neither failure can cost the other, and neither can
+cost the activity.
+
+Unlike Telegram, push does **not** apply the group's target rules — every finished workout
+notifies, because "someone just trained" is the point rather than "someone earned a tick".
+
+✅ **Checkpoint:** a workout reaches a phone.
+*(verified: 27 checks — a throwaway HTTP server stands in for Apple's push service and a fake
+browser keypair subscribes to it, so the real path is exercised end to end: the request is
+VAPID-signed, aes128gcm-encrypted, carries a day's TTL, and **decrypts back to the expected
+payload** with the deep link to the activity. Also: re-subscribing does not duplicate a device,
+a 410 drops it, the audience is the group and not outsiders, and the API refuses anonymous
+subscribes. Not verifiable here: an actual iPhone receiving one.)*
+
 ## Phase 8b: Group Targets ✅ DONE (added beyond the original plan)
 
 A group can set a shared training target: **N qualifying exercises per week / month / year,

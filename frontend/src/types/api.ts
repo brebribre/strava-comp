@@ -336,3 +336,20 @@ export interface TargetHistory {
   period: TargetPeriod
   weeks: TargetWeek[]
 }
+
+export interface PushConfig {
+  public_key: string
+  enabled: boolean
+}
+
+export interface PushSubscriptionRead {
+  endpoint: string
+  user_agent: string | null
+  created_at: string
+  last_used_at: string | null
+}
+
+export interface PushTestResult {
+  delivered: number
+  detail: string
+}

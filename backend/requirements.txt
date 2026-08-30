@@ -8,3 +8,4 @@ itsdangerous>=2.2
 pydantic-settings>=2.6
 Pillow>=11.0
 alembic>=1.14
+pywebpush>=2.0

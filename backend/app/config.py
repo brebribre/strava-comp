@@ -40,6 +40,15 @@ class Settings(BaseSettings):
     # Sent by Telegram as X-Telegram-Bot-Api-Secret-Token; proves an update is really theirs.
     telegram_webhook_secret: str = "dev-telegram-secret"
 
+    # Web push. The keypair identifies this server to Apple's and Google's push services;
+    # the public half is handed to the browser when it subscribes, the private half signs
+    # every send and never leaves the backend. Empty keys simply disable push.
+    vapid_private_key: str = ""
+    vapid_public_key: str = ""
+    # VAPID requires a contact for the push service to reach if we misbehave. A role
+    # address on our own domain, never a personal one.
+    vapid_subject: str = "mailto:push@bruderbande.com"
+
     frontend_origin: str = "http://localhost:5173"
     # Comma-separated extra origins allowed by CORS, e.g. a Railway preview URL.
     extra_cors_origins: str = ""

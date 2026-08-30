@@ -8,6 +8,7 @@ from app.models.activity import Activity
 from app.models.athlete import Athlete
 from app.models.group import Group, GroupMembership
 from app.models.integration import ActivityNotification, GroupIntegration
+from app.models.push import PushSubscription
 from app.models.target import GroupTarget
 
 __all__ = [
@@ -18,4 +19,5 @@ __all__ = [
     "GroupIntegration",
     "GroupMembership",
     "GroupTarget",
+    "PushSubscription",
 ]

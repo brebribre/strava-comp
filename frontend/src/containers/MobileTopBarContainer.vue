@@ -17,6 +17,11 @@ const { initials, firstName } = useFormat()
 
 const isMenuOpen = ref(false)
 
+function openNotifications() {
+  isMenuOpen.value = false
+  router.push({ name: 'notifications' })
+}
+
 async function handleLogout() {
   isMenuOpen.value = false
   await logout()
@@ -54,6 +59,13 @@ async function handleLogout() {
       v-if="isMenuOpen"
       class="animate-rise absolute right-3 top-full z-30 w-40 rounded-lg bg-raised p-1 shadow-lg shadow-black/40"
     >
+      <button
+        type="button"
+        class="w-full rounded-md px-3 py-2 text-left text-sm text-ink transition-colors duration-(--duration-quick) hover:bg-surface"
+        @click="openNotifications"
+      >
+        Notifications
+      </button>
       <button
         type="button"
         class="w-full rounded-md px-3 py-2 text-left text-sm text-ink transition-colors duration-(--duration-quick) hover:bg-surface"

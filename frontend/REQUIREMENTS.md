@@ -239,9 +239,15 @@ never a token in JS. The backend must list the frontend's origin in `FRONTEND_OR
 | `GET /groups/{id}/summary?days=30` | Per-member, per-sport totals |
 | `GET /groups/{id}/trend?days=30` | Weekly buckets per member |
 | `GET /groups/{id}/feed?limit=20&before=` | Shared timeline, newest first, cursor-paginated; includes `polyline` + `photo_url` for the card visual |
+| `GET /push/config` | The VAPID public key a browser subscribes with |
+| `POST/DELETE /push/subscriptions` | Register or forget this device |
+| `POST /push/test` | Send yourself a notification, to prove a phone is set up |
 | `GET /activities/{id}` | One activity in full: description, calories, splits, GPS polyline |
 | `GET /recap?days=365` | Personal per-sport totals with growth vs the previous period |
 | `GET /recap/{sport}?months=12` | One sport: monthly trend, bests, consistency |
+| `GET /push/config` | The VAPID public key a browser subscribes with |
+| `POST/DELETE /push/subscriptions` | Register or forget this device |
+| `POST /push/test` | Send yourself a notification, to prove a phone is set up |
 | `GET /activities/{id}` | One activity in full, incl. `exercises` parsed from a logged gym session |
 | `GET/PUT/DELETE /groups/{id}/target` | The group's training target — `count`/`period`, `starts_at`–`until`, per-sport rules |
 | `GET /groups/{id}/target/progress` | Every member's progress against it, current period |

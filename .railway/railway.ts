@@ -32,6 +32,12 @@ export default defineRailway(() => {
       SECRET_KEY: preserve(),
       STRAVA_VERIFY_TOKEN: preserve(),
       TELEGRAM_BOT_TOKEN: preserve(),
+      // Web push. The private key signs every notification; the public one is handed to
+      // browsers when they subscribe. Both are set in the dashboard, and changing the pair
+      // invalidates every existing subscription — every phone would have to opt in again.
+      VAPID_PRIVATE_KEY: preserve(),
+      VAPID_PUBLIC_KEY: preserve(),
+      VAPID_SUBJECT: preserve(),
       STRAVA_REDIRECT_URI: preserve(),
       FRONTEND_ORIGIN: preserve(),
     },

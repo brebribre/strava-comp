@@ -2,7 +2,16 @@
 
 from fastapi import APIRouter
 
-from app.api.routes import activities, auth, groups, health, recap, telegram, webhooks
+from app.api.routes import (
+    activities,
+    auth,
+    groups,
+    health,
+    push,
+    recap,
+    telegram,
+    webhooks,
+)
 
 api_router = APIRouter()
 api_router.include_router(health.router)
@@ -12,3 +21,4 @@ api_router.include_router(activities.router)
 api_router.include_router(recap.router)
 api_router.include_router(webhooks.router)
 api_router.include_router(telegram.router)
+api_router.include_router(push.router)

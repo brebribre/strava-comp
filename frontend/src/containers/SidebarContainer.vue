@@ -100,6 +100,9 @@ async function handleLogout() {
       <AppButton variant="ghost" class="w-full" @click="router.push({ name: 'groups' })">
         Manage groups
       </AppButton>
+      <AppButton variant="ghost" class="w-full" @click="router.push({ name: 'notifications' })">
+        Notifications
+      </AppButton>
       <AppButton variant="ghost" class="w-full" @click="handleLogout">Log out</AppButton>
     </div>
   </aside>
