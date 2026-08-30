@@ -25,11 +25,15 @@ function isActive(key: string): boolean {
 </script>
 
 <template>
-  <!-- A floating bar rather than one welded to the bottom edge: it sits inset from the
-       screen with the home indicator's safe area under it, and takes its edge from the
-       surface tint like every other card. -->
-  <nav class="px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-1" aria-label="Primary">
-    <div class="flex gap-1 rounded-2xl bg-surface p-1.5 shadow-lg shadow-black/40">
+  <!-- A floating bar, but one that still reaches the bottom of the screen. The home
+       indicator's inset is paid *inside* the card rather than under it: spending it as
+       margin would park the bar 34px up and leave a dead strip of background beneath,
+       which is not what a phone's tab bar looks like. Everywhere without an indicator the
+       inset is 0 and the card keeps its plain padding. -->
+  <nav class="px-3 pb-2 pt-1" aria-label="Primary">
+    <div
+      class="flex gap-1 rounded-2xl bg-surface p-1.5 pb-[max(0.375rem,calc(env(safe-area-inset-bottom)-0.5rem))] shadow-lg shadow-black/40"
+    >
       <button
         v-for="tab in tabs"
         :key="tab.key"

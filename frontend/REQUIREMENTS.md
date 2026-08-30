@@ -415,10 +415,13 @@ afterthought**.
   know a panel scrolls at all.
 - **The notch is paid for, not avoided.** `viewport-fit=cover` plus a translucent status bar
   means the page owns the whole screen, so the top bar and the drawer add
-  `env(safe-area-inset-top)` to their own padding and the tab bar adds
-  `env(safe-area-inset-bottom)`. On anything without a notch those resolve to `0`, so a
-  laptop, an Android phone and a browser tab are all untouched — which is why the insets go
-  on the components rather than into a device check.
+  `env(safe-area-inset-top)` to their own padding. On anything without a notch those resolve
+  to `0`, so a laptop, an Android phone and a browser tab are all untouched — which is why
+  the insets go on the components rather than into a device check.
+- **An inset is padding, not margin.** The tab bar pays `env(safe-area-inset-bottom)` *inside*
+  its card, so the bar still reaches the bottom of the screen and only its buttons sit clear
+  of the home indicator. Spending it as margin instead parks the whole bar 34px up and leaves
+  a dead strip of background beneath it, which is not what a phone's tab bar looks like.
 - **Zoom is off on phones.** `maximum-scale=1, user-scalable=no, viewport-fit=cover` plus
   `touch-action: manipulation` and no tap highlight. iOS Safari ignores `user-scalable=no` on
   purpose, so `main.ts` also refuses Safari's `gesture*` events — that is the part that
