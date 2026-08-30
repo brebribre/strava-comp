@@ -388,6 +388,11 @@ shows that instead of the raw description it came from. Both are empty for every
 isn't a logged gym session, and — because only enriched activities have a description at all —
 for sessions Strava hasn't been asked about in detail yet.
 
+The **share card** carries the same list: a gym session shows every exercise with its sets,
+and the card grows to fit rather than dropping them — 4:5 is the minimum shape, not the shape.
+Both renderers do this, the canvas one in the app and the Pillow one Telegram posts, and both
+now sign off with the app icon beside the wordmark.
+
 ✅ **Checkpoint:** a gym session reads as a workout rather than a wall of text.
 *(verified: 16 checks — the Hevy shape, repeats kept in order, bare "Set 1" lines, dashes
 instead of colons, blocks with no blank line between them, prose that surrounds a lift; and

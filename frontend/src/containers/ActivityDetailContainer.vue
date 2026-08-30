@@ -175,7 +175,7 @@ function goBack() {
         />
         <div class="mt-4 flex flex-wrap gap-2">
           <AppButton
-            v-if="shareCard.canShareFiles(activity)"
+            v-if="shareCard.canShare()"
             @click="shareCard.share(activity)"
           >
             Share…

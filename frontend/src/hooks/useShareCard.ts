@@ -4,10 +4,15 @@ import { useFormat } from '@/hooks/useFormat'
 import { useSportIcon } from '@/hooks/useSportIcon'
 import type { ActivityDetail } from '@/types/api'
 
-// Portrait 4:5 — the shape chat apps and stories show without cropping.
+// Fixed width, computed height. Portrait 4:5 is the shape chat apps show without cropping,
+// so that is the *minimum*; a gym session with a dozen exercises is allowed to be taller
+// rather than have its content dropped.
 const WIDTH = 1080
-const HEIGHT = 1350
+const MIN_HEIGHT = 1350
 const PAD = 84
+
+// Past this the card stops being a card and starts being a scroll.
+const MAX_EXERCISES = 12
 
 // The card is always dark, regardless of the viewer's theme: it gets sent into other
 // people's chats, where it should look deliberate rather than inherit our page state.
@@ -18,14 +23,30 @@ const LINE = '#2a2a2a'
 
 const FONT = 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
 
+/** The app icon, fetched once and reused for every card drawn in this session. */
+let markPromise: Promise<HTMLImageElement | null> | null = null
+
+function loadMark(): Promise<HTMLImageElement | null> {
+  markPromise ??= new Promise((resolve) => {
+    const image = new Image()
+    image.onload = () => resolve(image)
+    // A card without its logo still beats no card at all.
+    image.onerror = () => resolve(null)
+    image.src = '/icon-192.png'
+  })
+  return markPromise
+}
+
 /** Renders an activity as a shareable PNG and hands it to the OS share sheet or a download. */
 export function useShareCard() {
-  const { km, duration, elevation, heartrate, initials, paceOrSpeed } = useFormat()
+  const { km, duration, elevation, heartrate, initials, paceOrSpeed, sportLabel } = useFormat()
   const { geometry } = useSportIcon()
 
   const isWorking = ref(false)
   const error = ref<string | null>(null)
   const previewUrl = ref<string | null>(null)
+  // Kept so sharing can hand the file over without re-rendering first — see share().
+  const rendered = ref<Blob | null>(null)
 
   function statsFor(activity: ActivityDetail): { label: string; value: string }[] {
     const stats: { label: string; value: string }[] = []
@@ -135,15 +156,68 @@ export function useShareCard() {
     ctx.restore()
   }
 
-  function render(activity: ActivityDetail): HTMLCanvasElement {
+  /** Wraps a title to at most two lines, ellipsising the second. */
+  function titleLines(ctx: CanvasRenderingContext2D, title: string): string[] {
+    ctx.font = `700 66px ${FONT}`
+    const words = title.split(' ')
+    const lines: string[] = []
+    let line = ''
+    for (const word of words) {
+      const candidate = line ? `${line} ${word}` : word
+      if (ctx.measureText(candidate).width > WIDTH - PAD * 2 && line) {
+        lines.push(line)
+        line = word
+        if (lines.length === 2) break
+      } else {
+        line = candidate
+      }
+    }
+    if (lines.length < 2 && line) lines.push(line)
+    const dropped = words.join(' ') !== lines.join(' ')
+    return lines.slice(0, 2).map((text, index) => (dropped && index === 1 ? `${text}…` : text))
+  }
+
+  /** Shortens a string to fit a width, with an ellipsis. */
+  function fit(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string {
+    if (ctx.measureText(text).width <= maxWidth) return text
+    let cut = text
+    while (cut.length > 1 && ctx.measureText(`${cut}…`).width > maxWidth) cut = cut.slice(0, -1)
+    return `${cut}…`
+  }
+
+  function render(activity: ActivityDetail, mark: HTMLImageElement | null): HTMLCanvasElement {
     const canvas = document.createElement('canvas')
     canvas.width = WIDTH
-    canvas.height = HEIGHT
     const ctx = canvas.getContext('2d')
     if (!ctx) throw new Error('canvas unsupported')
 
+    // ── Measure first, then size the canvas ──────────────────────────────────
+    // Setting canvas.height wipes the bitmap, so every measurement that depends on font
+    // metrics happens before a single pixel is drawn.
+    const title = titleLines(ctx, activity.name ?? 'Untitled activity')
+    const stats = statsFor(activity).slice(0, 6)
+    const statRows = Math.ceil(stats.length / 2)
+    const exercises = activity.exercises.slice(0, MAX_EXERCISES)
+    const hidden = activity.exercises.length - exercises.length
+
+    const headerBottom = PAD + 96 + 96
+    const iconTop = headerBottom + 30
+    const titleBottom = iconTop + 280 + (title.length - 1) * 78
+    const gridTop = titleBottom + 96
+    const gridBottom = gridTop + statRows * 150
+    const exercisesTop = gridBottom + 20
+    const exercisesHeight = exercises.length
+      ? 70 + exercises.length * 96 + (hidden > 0 ? 52 : 0)
+      : 0
+    const contentBottom = exercisesTop + exercisesHeight + 40
+    const height = Math.max(MIN_HEIGHT, contentBottom + 150)
+    // On a short card the footer sits at the bottom rather than wherever the content ran
+    // out, which would leave it stranded in the middle of the picture.
+    const footerTop = height - 150
+
+    canvas.height = height
     ctx.fillStyle = CANVAS_BG
-    ctx.fillRect(0, 0, WIDTH, HEIGHT)
+    ctx.fillRect(0, 0, WIDTH, height)
 
     // ── Profile row ──────────────────────────────────────────────────────────
     const avatarSize = 96
@@ -167,45 +241,21 @@ export function useShareCard() {
     ctx.fillText(when, PAD + avatarSize + 28, PAD + 86)
 
     // ── Sport icon + title ───────────────────────────────────────────────────
-    const iconTop = PAD + 210
     drawIcon(ctx, activity.sport_type, PAD, iconTop, 130)
 
     ctx.fillStyle = INK_MUTED
     ctx.font = `500 30px ${FONT}`
-    ctx.fillText((activity.sport_type ?? 'Activity').toUpperCase(), PAD, iconTop + 200)
+    ctx.fillText(sportLabel(activity.sport_type ?? 'Activity').toUpperCase(), PAD, iconTop + 200)
 
     ctx.fillStyle = INK
     ctx.font = `700 66px ${FONT}`
-    const title = activity.name ?? 'Untitled activity'
-    // Two lines maximum, ellipsised — long titles must not push the stats off the card.
-    const words = title.split(' ')
-    const lines: string[] = []
-    let line = ''
-    for (const word of words) {
-      const candidate = line ? `${line} ${word}` : word
-      if (ctx.measureText(candidate).width > WIDTH - PAD * 2 && line) {
-        lines.push(line)
-        line = word
-      } else {
-        line = candidate
-      }
-      if (lines.length === 2) break
-    }
-    if (lines.length < 2 && line) lines.push(line)
-    lines.slice(0, 2).forEach((text, index) => {
-      const isLast = index === 1 && words.join(' ') !== lines.join(' ')
-      ctx.fillText(isLast ? `${text}…` : text, PAD, iconTop + 280 + index * 78)
-    })
+    title.forEach((line, index) => ctx.fillText(line, PAD, iconTop + 280 + index * 78))
 
     // ── Stats grid ───────────────────────────────────────────────────────────
-    const stats = statsFor(activity)
-    const gridTop = iconTop + 400
     const colWidth = (WIDTH - PAD * 2) / 2
-    stats.slice(0, 6).forEach((stat, index) => {
-      const col = index % 2
-      const row = Math.floor(index / 2)
-      const x = PAD + col * colWidth
-      const y = gridTop + row * 150
+    stats.forEach((stat, index) => {
+      const x = PAD + (index % 2) * colWidth
+      const y = gridTop + Math.floor(index / 2) * 150
 
       ctx.fillStyle = INK_MUTED
       ctx.font = `500 28px ${FONT}`
@@ -216,15 +266,63 @@ export function useShareCard() {
       ctx.fillText(stat.value, x, y + 66)
     })
 
-    // ── Footer ───────────────────────────────────────────────────────────────
+    // ── The session itself, when it was a logged gym workout ─────────────────
+    if (exercises.length) {
+      ctx.strokeStyle = LINE
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.moveTo(PAD, exercisesTop)
+      ctx.lineTo(WIDTH - PAD, exercisesTop)
+      ctx.stroke()
+
+      ctx.fillStyle = INK_MUTED
+      ctx.font = `500 28px ${FONT}`
+      ctx.fillText(
+        `${activity.exercises.length} EXERCISE${activity.exercises.length === 1 ? '' : 'S'}`,
+        PAD,
+        exercisesTop + 52,
+      )
+
+      exercises.forEach((exercise, index) => {
+        const y = exercisesTop + 70 + index * 96
+
+        ctx.fillStyle = INK
+        ctx.font = `600 40px ${FONT}`
+        ctx.fillText(fit(ctx, exercise.name, WIDTH - PAD * 2), PAD, y + 46)
+
+        ctx.fillStyle = INK_MUTED
+        ctx.font = `400 32px ${FONT}`
+        ctx.fillText(fit(ctx, exercise.sets.join('  ·  '), WIDTH - PAD * 2), PAD, y + 90)
+      })
+
+      if (hidden > 0) {
+        ctx.fillStyle = INK_MUTED
+        ctx.font = `500 30px ${FONT}`
+        ctx.fillText(`+${hidden} more`, PAD, exercisesTop + 70 + exercises.length * 96 + 34)
+      }
+    }
+
+    // ── Footer: the mark, then the wordmark ──────────────────────────────────
     ctx.strokeStyle = LINE
     ctx.lineWidth = 2
     ctx.beginPath()
-    ctx.moveTo(PAD, HEIGHT - PAD - 70)
-    ctx.lineTo(WIDTH - PAD, HEIGHT - PAD - 70)
+    ctx.moveTo(PAD, footerTop)
+    ctx.lineTo(WIDTH - PAD, footerTop)
     ctx.stroke()
 
-    drawWordmark(ctx, PAD, HEIGHT - PAD - 14, 30, INK)
+    const markSize = 64
+    const markTop = footerTop + 40
+    let wordmarkX = PAD
+    if (mark) {
+      ctx.save()
+      ctx.beginPath()
+      ctx.roundRect(PAD, markTop, markSize, markSize, 14)
+      ctx.clip()
+      ctx.drawImage(mark, PAD, markTop, markSize, markSize)
+      ctx.restore()
+      wordmarkX = PAD + markSize + 24
+    }
+    drawWordmark(ctx, wordmarkX, markTop + markSize / 2 + 11, 30, INK)
 
     return canvas
   }
@@ -243,9 +341,10 @@ export function useShareCard() {
     isWorking.value = true
     error.value = null
     try {
-      const blob = await toBlob(render(activity))
+      const blob = await toBlob(render(activity, await loadMark()))
       if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
       previewUrl.value = URL.createObjectURL(blob)
+      rendered.value = blob
       return blob
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Could not build the image'
@@ -258,6 +357,7 @@ export function useShareCard() {
   function clear() {
     if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
     previewUrl.value = null
+    rendered.value = null
     error.value = null
   }
 
@@ -267,19 +367,45 @@ export function useShareCard() {
     return `${date}-${slug}.png`.replace(/-+\./, '.')
   }
 
-  /** True when the OS share sheet can take a file — the path that reaches WhatsApp. */
+  /** True when the OS share sheet can take a file — the path that reaches WhatsApp.
+   *
+   * The probe carries a byte: some browsers answer `false` for an empty file, which had
+   * this reporting "no file sharing here" on phones that support it perfectly well.
+   */
   function canShareFiles(activity: ActivityDetail): boolean {
     if (typeof navigator === 'undefined' || !navigator.canShare) return false
-    const probe = new File([new Blob()], fileName(activity), { type: 'image/png' })
-    return navigator.canShare({ files: [probe] })
+    const probe = new File([new Uint8Array(1)], fileName(activity), { type: 'image/png' })
+    try {
+      return navigator.canShare({ files: [probe] })
+    } catch {
+      return false
+    }
   }
 
+  /** True when there is any share sheet at all, file support or not. */
+  function canShare(): boolean {
+    return typeof navigator !== 'undefined' && typeof navigator.share === 'function'
+  }
+
+  /**
+   * Hand the card to the OS share sheet.
+   *
+   * Uses the image already rendered for the preview rather than drawing a new one: iOS
+   * only allows `navigator.share` while the tap that triggered it is still "active", and
+   * awaiting a render first spends that activation and gets the call rejected.
+   */
   async function share(activity: ActivityDetail) {
-    const blob = await preview(activity)
+    const blob = rendered.value ?? (await preview(activity))
     if (!blob) return false
+
     const file = new File([blob], fileName(activity), { type: 'image/png' })
+    const payload = canShareFiles(activity)
+      ? { files: [file], title: activity.name ?? 'Activity' }
+      : // No file support: share the link, which is better than failing outright.
+        { title: activity.name ?? 'Activity', url: window.location.href }
+
     try {
-      await navigator.share({ files: [file], title: activity.name ?? 'Activity' })
+      await navigator.share(payload)
       return true
     } catch {
       // Includes the user simply dismissing the share sheet — not worth an error message.
@@ -295,5 +421,15 @@ export function useShareCard() {
     link.click()
   }
 
-  return { preview, share, download, clear, canShareFiles, previewUrl, isWorking, error }
+  return {
+    preview,
+    share,
+    download,
+    clear,
+    canShare,
+    canShareFiles,
+    previewUrl,
+    isWorking,
+    error,
+  }
 }
